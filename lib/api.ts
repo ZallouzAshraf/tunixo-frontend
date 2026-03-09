@@ -1,4 +1,6 @@
 import axios from 'axios'
+import { clearTokens } from '@/lib/auth'
+import { useAuthStore } from '@/store/authStore'
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
@@ -25,7 +27,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
-        localStorage.clear()
+        clearTokens()
+        useAuthStore.getState().clearAuth()
         window.location.href = '/login'
       }
     }

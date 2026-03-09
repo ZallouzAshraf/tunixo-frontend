@@ -51,6 +51,8 @@ export function middleware(request: NextRequest) {
   // Auth routes: /login, /register
   if (pathname === '/login' || pathname === '/register') {
     if (token) {
+      if (role === ADMIN_ROLE) return NextResponse.redirect(new URL('/admin', request.url))
+      if (role === SELLER_ROLE) return NextResponse.redirect(new URL('/seller', request.url))
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
     return NextResponse.next()
