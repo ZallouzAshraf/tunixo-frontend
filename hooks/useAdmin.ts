@@ -13,7 +13,7 @@ import type {
   PaginatedResponse,
 } from '@/types'
 
-export function useDashboardStats() {
+export function useDashboardStats(enabled = true) {
   return useQuery({
     queryKey: ['admin', 'dashboard'],
     queryFn: async () => {
@@ -21,6 +21,7 @@ export function useDashboardStats() {
       return res.data as DashboardStats
     },
     refetchInterval: 30000,
+    enabled,
   })
 }
 
