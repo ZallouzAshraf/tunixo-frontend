@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Order } from '@/types'
 
@@ -20,5 +20,19 @@ export function useOrder(id: string) {
       return res.data as Order
     },
     enabled: !!id,
+  })
+}
+
+export function useCancelOrder() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const res = await api.delete(`/orders/${orderId}`)
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['wallet'] })
+    },
   })
 }
