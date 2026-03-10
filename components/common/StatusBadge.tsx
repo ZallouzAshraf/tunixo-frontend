@@ -35,6 +35,14 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
     label: 'Remboursé',
     className: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
   },
+  USED: {
+    label: 'Utilisé',
+    className: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+  },
+  PROCESSING: {
+    label: 'En cours',
+    className: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+  },
 }
 
 export default function StatusBadge({ status }: { status: string }) {

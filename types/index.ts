@@ -21,7 +21,17 @@ export interface Service {
   imageUrl?: string
   isActive: boolean
   stockCount?: number
+  deliveryType?: 'ACCOUNT' | 'MANUAL'
   createdAt: string
+}
+
+export interface StockLevelItem {
+  serviceId: string
+  service?: Service
+  available: number
+  used: number
+  total: number
+  accounts?: Account[]
 }
 
 export interface Account {
@@ -36,6 +46,7 @@ export interface Account {
 export interface Order {
   id: string
   userId: string
+  user?: User
   serviceId: string
   service?: Service
   serviceEmail?: string
@@ -65,6 +76,7 @@ export interface Transaction {
 export interface SellerDeposit {
   id: string
   sellerId: string
+  seller?: User
   amountUsd: number
   amountTnd: number
   exchangeRate: number
@@ -81,6 +93,7 @@ export interface SellerDeposit {
 export interface SellerWithdrawal {
   id: string
   sellerId: string
+  seller?: User
   amountTnd: number
   method: string
   methodDetails: Record<string, unknown>

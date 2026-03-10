@@ -1,7 +1,12 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
 export default function NewAdminServicePage() {
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold">NewAdminService</h1>
-    </div>
-  )
+  const router = useRouter()
+  useEffect(() => {
+    router.replace('/admin/services')
+  }, [router])
+  return null
 }
