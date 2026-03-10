@@ -1,7 +1,28 @@
 'use client'
 
-export default function LoadingSpinner() {
+import { cn } from '@/lib/utils'
+
+const sizeClasses = {
+  sm: 'h-4 w-4 border-2',
+  md: 'h-8 w-8 border-2',
+  lg: 'h-12 w-12 border-[3px]',
+}
+
+export default function LoadingSpinner({
+  size = 'md',
+  className,
+}: {
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
+}) {
   return (
-    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    <div
+      className={cn(
+        'animate-spin rounded-full border-[#6366f1] border-t-transparent',
+        sizeClasses[size],
+        className
+      )}
+      aria-label="Chargement"
+    />
   )
 }

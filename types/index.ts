@@ -38,6 +38,7 @@ export interface Order {
   userId: string
   serviceId: string
   service?: Service
+  serviceEmail?: string
   accountId?: string
   account?: Account
   amountPaid: number
