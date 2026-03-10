@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import type { Transaction } from '@/types'
 
 export function useWalletBalance() {
   return useQuery({
@@ -16,7 +17,22 @@ export function useTransactions() {
     queryKey: ['wallet', 'transactions'],
     queryFn: async () => {
       const res = await api.get('/wallet/transactions')
-      return res.data
+      return (Array.isArray(res.data) ? res.data : []) as Transaction[]
+    },
+  })
+}
+
+export type TopupResponse = { paymentRef?: string; payUrl: string; amount: number }
+
+export function useTopup() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: { amount: number; description?: string }) => {
+      const res = await api.post<TopupResponse>('/payments/topup', body)
+      return res.data as TopupResponse
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallet'] })
     },
   })
 }
