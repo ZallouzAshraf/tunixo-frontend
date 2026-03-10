@@ -8,7 +8,7 @@ export function useWithdrawals() {
   return useQuery({
     queryKey: ['withdrawals'],
     queryFn: async () => {
-      const res = await api.get('/withdrawals')
+      const res = await api.get('/withdrawals/my')
       return res.data as SellerWithdrawal[]
     },
   })

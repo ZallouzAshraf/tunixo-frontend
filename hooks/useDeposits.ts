@@ -8,7 +8,7 @@ export function useDeposits() {
   return useQuery({
     queryKey: ['deposits'],
     queryFn: async () => {
-      const res = await api.get('/deposits')
+      const res = await api.get('/deposits/my')
       return res.data as SellerDeposit[]
     },
   })

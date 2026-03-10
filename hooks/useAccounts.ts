@@ -50,11 +50,10 @@ export function useBulkAddAccounts() {
       serviceId: string
       accounts: Array<Record<string, string>>
     }) => {
-      const body = {
+      const res = await api.post('/accounts/bulk', {
         serviceId: data.serviceId,
-        accounts: data.accounts.map((cred) => ({ credentials: cred })),
-      }
-      const res = await api.post('/accounts/bulk', body)
+        accounts: data.accounts,
+      })
       return res.data
     },
     onSuccess: () => {

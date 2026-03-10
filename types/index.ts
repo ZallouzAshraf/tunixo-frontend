@@ -37,6 +37,8 @@ export interface StockLevelItem {
 export interface Account {
   id: string
   serviceId: string
+  service?: Service
+  accountEmail?: string
   credentials: Record<string, unknown>
   status: 'AVAILABLE' | 'RESERVED' | 'USED'
   expiresAt?: string
