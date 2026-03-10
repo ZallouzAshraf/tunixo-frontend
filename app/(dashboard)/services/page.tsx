@@ -1,10 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import { useServices } from '@/hooks/useServices'
 import ServiceCard from '@/components/services/ServiceCard'
 import OrderModal from '@/components/services/OrderModal'
-import LoadingSpinner from '@/components/common/LoadingSpinner'
+import ServiceCardSkeleton from '@/components/skeletons/ServiceCardSkeleton'
+import EmptyState from '@/components/common/EmptyState'
+import { staggerContainer, staggerItem } from '@/lib/animations'
 import type { Service } from '@/types'
 
 const CATEGORIES = [
@@ -79,33 +82,37 @@ export default function ServicesPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex min-h-[300px] items-center justify-center">
-          <LoadingSpinner size="lg" />
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <ServiceCardSkeleton key={i} />
+          ))}
         </div>
       ) : isError ? (
         <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-6 text-center text-red-400">
           Erreur lors du chargement des services.
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-[#1e1e1e] bg-[#111111] py-20">
-          <span className="text-5xl">🛒</span>
-          <p className="mt-4 text-lg font-medium text-white">
-            Aucun service trouvé
-          </p>
-          <p className="mt-1 text-sm text-gray-500">
-            Essayez une autre recherche
-          </p>
-        </div>
+        <EmptyState
+          icon="🛒"
+          title="Aucun service trouvé"
+          description="Essayez une autre recherche ou catégorie."
+        />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
           {filtered.map((service) => (
-            <ServiceCard
-              key={service.id}
-              service={service}
-              onOrder={() => setOrderService(service)}
-            />
+            <motion.div key={service.id} variants={staggerItem}>
+              <ServiceCard
+                service={service}
+                onOrder={() => setOrderService(service)}
+              />
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {orderService && (

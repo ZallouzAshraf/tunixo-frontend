@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { useOrders } from '@/hooks/useOrders'
 import { useCancelOrder } from '@/hooks/useOrders'
 import OrderCard from '@/components/orders/OrderCard'
+import OrderCardSkeleton from '@/components/skeletons/OrderCardSkeleton'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
-import LoadingSpinner from '@/components/common/LoadingSpinner'
+import EmptyState from '@/components/common/EmptyState'
+import { fadeIn, staggerContainer, staggerItem } from '@/lib/animations'
 import type { Order } from '@/types'
 import { toast } from 'sonner'
 
@@ -54,7 +56,12 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <motion.div
+      className="space-y-8"
+      initial="initial"
+      animate="animate"
+      variants={fadeIn}
+    >
       <div>
         <h1 className="text-2xl font-bold text-white">Mes commandes</h1>
         <p className="mt-1 text-gray-400">
@@ -80,33 +87,34 @@ export default function OrdersPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner size="lg" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center rounded-xl border border-[#1e1e1e] bg-[#111111] py-16">
-          <span className="text-5xl">📦</span>
-          <p className="mt-4 font-medium text-white">Aucune commande</p>
-          <p className="mt-1 text-center text-sm text-gray-500">
-            Vous n&apos;avez pas encore commandé de service
-          </p>
-          <Link
-            href="/services"
-            className="mt-4 rounded-lg bg-[#6366f1] px-4 py-2 text-sm font-medium text-white hover:bg-[#5558e3]"
-          >
-            Découvrir les services
-          </Link>
-        </div>
-      ) : (
         <div className="space-y-4">
-          {filtered.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              onCancel={handleCancelClick}
-            />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <OrderCardSkeleton key={i} />
           ))}
         </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon="📦"
+          title="Aucune commande"
+          description="Vous n'avez pas encore commandé de service."
+          action={{ label: 'Découvrir les services', href: '/services' }}
+        />
+      ) : (
+        <motion.div
+          className="space-y-4"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
+          {filtered.map((order) => (
+            <motion.div key={order.id} variants={staggerItem}>
+              <OrderCard
+                order={order}
+                onCancel={handleCancelClick}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
       )}
 
       <ConfirmDialog
@@ -118,6 +126,6 @@ export default function OrdersPage() {
         confirmText="Annuler la commande"
         isLoading={cancelOrder.isPending}
       />
-    </div>
+    </motion.div>
   )
 }

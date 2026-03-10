@@ -1,6 +1,8 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { badgeHover } from '@/lib/animations'
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   ACTIVE: {
@@ -53,13 +55,14 @@ export default function StatusBadge({ status }: { status: string }) {
   }
 
   return (
-    <span
+    <motion.span
       className={cn(
         'inline-flex items-center border px-2 py-0.5 rounded-full text-xs font-medium',
         config.className
       )}
+      {...badgeHover}
     >
       {config.label}
-    </span>
+    </motion.span>
   )
 }

@@ -1,11 +1,14 @@
-'use client'
+import type { Metadata } from 'next'
+import DashboardLayoutClient from './DashboardLayoutClient'
 
-import AppLayout from '@/components/layout/AppLayout'
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <AppLayout>{children}</AppLayout>
+  return <DashboardLayoutClient>{children}</DashboardLayoutClient>
 }

@@ -1,12 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { useCurrentUser } from '@/hooks/useAuth'
 import { useOrders } from '@/hooks/useOrders'
 import { useWalletBalance } from '@/hooks/useWallet'
 import { formatTND, formatDate } from '@/lib/utils'
-import LoadingSpinner from '@/components/common/LoadingSpinner'
+import { fadeIn, staggerContainer, staggerItem } from '@/lib/animations'
+import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton'
+import EmptyState from '@/components/common/EmptyState'
 import StatusBadge from '@/components/common/StatusBadge'
 
 export default function DashboardPage() {
@@ -24,15 +27,16 @@ export default function DashboardPage() {
   const fullName = user?.fullName ?? user?.email ?? 'Utilisateur'
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   return (
-    <div className="space-y-8">
+    <motion.div
+      className="space-y-8"
+      initial="initial"
+      animate="animate"
+      variants={fadeIn}
+    >
       {/* Welcome header */}
       <div>
         <h2 className="text-2xl font-bold text-white">
@@ -44,8 +48,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 transition-all duration-200">
+      <motion.div
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
+        <motion.div variants={staggerItem} className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 transition-all duration-200">
           <div className="flex items-center gap-3">
             <span className="text-2xl">💳</span>
             <div>
@@ -62,9 +71,9 @@ export default function DashboardPage() {
           >
             Recharger
           </Link>
-        </div>
+        </motion.div>
 
-        <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 transition-all duration-200">
+        <motion.div variants={staggerItem} className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 transition-all duration-200">
           <div className="flex items-center gap-3">
             <span className="text-2xl">📦</span>
             <div>
@@ -73,9 +82,9 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-500">{activeCount} actives</p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 transition-all duration-200">
+        <motion.div variants={staggerItem} className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 transition-all duration-200">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚡</span>
             <div>
@@ -84,9 +93,9 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-500">En cours</p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 transition-all duration-200">
+        <motion.div variants={staggerItem} className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 transition-all duration-200">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⏳</span>
             <div>
@@ -95,8 +104,8 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-500">En traitement</p>
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Wallet empty banner */}
       {balance === 0 && (
@@ -194,18 +203,12 @@ export default function DashboardPage() {
         </div>
 
         {recentOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-[#1e1e1e] bg-[#111111] py-16">
-            <span className="text-4xl">📦</span>
-            <p className="mt-4 text-gray-400">
-              Aucune commande pour le moment
-            </p>
-            <Link
-              href="/services"
-              className="mt-4 rounded-lg bg-[#6366f1] px-4 py-2 text-sm font-medium text-white hover:bg-[#5558e3]"
-            >
-              Découvrir les services
-            </Link>
-          </div>
+          <EmptyState
+            icon="📦"
+            title="Aucune commande pour le moment"
+            description="Découvrez nos services et commandez votre premier abonnement."
+            action={{ label: 'Découvrir les services', href: '/services' }}
+          />
         ) : (
           <div className="overflow-hidden rounded-xl border border-[#1e1e1e] bg-[#111111]">
             <div className="overflow-x-auto">
@@ -260,6 +263,6 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   )
 }

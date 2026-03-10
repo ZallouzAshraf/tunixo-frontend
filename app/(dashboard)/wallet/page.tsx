@@ -3,11 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
 import { useWalletBalance, useTransactions } from '@/hooks/useWallet'
 import { formatTND } from '@/lib/utils'
 import TopupModal from '@/components/wallet/TopupModal'
 import TransactionList from '@/components/wallet/TransactionList'
-import LoadingSpinner from '@/components/common/LoadingSpinner'
+import StatCardSkeleton from '@/components/skeletons/StatCardSkeleton'
+import TransactionSkeleton from '@/components/skeletons/TransactionSkeleton'
+import EmptyState from '@/components/common/EmptyState'
+import { fadeIn } from '@/lib/animations'
 
 const QUICK_AMOUNTS = [20, 50, 100, 200]
 const FILTERS = [
@@ -52,8 +56,33 @@ export default function WalletPage() {
 
   const isLoading = balanceLoading || transactionsLoading
 
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Mon Wallet</h1>
+          <p className="mt-1 text-gray-400">Gérez votre solde et vos transactions</p>
+        </div>
+        <StatCardSkeleton />
+        <div>
+          <h3 className="mb-4 text-lg font-semibold text-white">Historique des transactions</h3>
+          <div className="rounded-xl border border-[#1e1e1e] bg-[#111111]">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <TransactionSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-8">
+    <motion.div
+      className="space-y-8"
+      initial="initial"
+      animate="animate"
+      variants={fadeIn}
+    >
       <div>
         <h1 className="text-2xl font-bold text-white">Mon Wallet</h1>
         <p className="mt-1 text-gray-400">
@@ -79,13 +108,9 @@ export default function WalletPage() {
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-gray-500">Solde disponible</p>
-            {isLoading ? (
-              <LoadingSpinner size="lg" className="mt-2" />
-            ) : (
-              <p className="mt-1 text-3xl font-bold text-white sm:text-4xl">
-                {formatTND(balance)}
-              </p>
-            )}
+            <p className="mt-1 text-3xl font-bold text-white sm:text-4xl">
+              {formatTND(balance)}
+            </p>
             <p className="mt-1 text-xs text-gray-500">Mis à jour maintenant</p>
           </div>
           <button
@@ -151,25 +176,13 @@ export default function WalletPage() {
         </div>
 
         <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] px-4">
-          {transactionsLoading ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner size="lg" />
-            </div>
-          ) : transactions.length === 0 ? (
-            <div className="flex flex-col items-center py-16">
-              <span className="text-5xl">💳</span>
-              <p className="mt-4 font-medium text-white">Aucune transaction</p>
-              <p className="mt-1 text-sm text-gray-500">
-                Rechargez votre wallet pour commencer
-              </p>
-              <button
-                type="button"
-                onClick={() => setTopupOpen(true)}
-                className="mt-4 rounded-lg bg-[#6366f1] px-4 py-2 text-sm font-medium text-white hover:bg-[#5558e3]"
-              >
-                Recharger maintenant
-              </button>
-            </div>
+          {transactions.length === 0 ? (
+            <EmptyState
+              icon="💳"
+              title="Aucune transaction"
+              description="Rechargez votre wallet pour commencer."
+              action={{ label: 'Recharger maintenant', onClick: () => setTopupOpen(true) }}
+            />
           ) : (
             <TransactionList transactions={transactions} filter={filter} />
           )}
@@ -181,6 +194,6 @@ export default function WalletPage() {
         onClose={() => setTopupOpen(false)}
         defaultAmount={topupDefaultAmount}
       />
-    </div>
+    </motion.div>
   )
 }

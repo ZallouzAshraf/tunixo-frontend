@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { staggerContainer, fadeInLeft } from '@/lib/animations'
 import { useCurrentUser, useLogout } from '@/hooks/useAuth'
 import { useUiStore } from '@/store/uiStore'
 import { useWalletBalance } from '@/hooks/useWallet'
@@ -149,7 +151,12 @@ export default function Sidebar() {
         </div>
 
         {/* Nav items */}
-        <nav className="flex flex-1 flex-col gap-0 overflow-y-auto p-2">
+        <motion.nav
+          className="flex flex-1 flex-col gap-0 overflow-y-auto p-2"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
           {navItems.map((item, idx) => {
             if ('divider' in item && item.divider) {
               return <div key={`div-${idx}`} className="my-2 border-t border-white/5" />
@@ -165,28 +172,29 @@ export default function Sidebar() {
                     : 0
             const active = isActive(pathname, href)
             return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  'mx-2 flex items-center rounded-lg px-3 py-2 text-sm transition-all duration-150',
-                  active
-                    ? 'border-l-2 border-indigo-500 bg-indigo-500/10 font-medium text-indigo-400'
-                    : 'border-l-2 border-transparent text-gray-400 hover:bg-white/5 hover:text-white'
-                )}
-              >
-                <span className="mr-3 text-base">{icon}</span>
-                <span className="flex-1">{label}</span>
-                {count > 0 && (
-                  <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">
-                    {count}
-                  </span>
-                )}
-              </Link>
+              <motion.div key={href} variants={fadeInLeft}>
+                <Link
+                  href={href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    'mx-2 flex items-center rounded-lg px-3 py-2 text-sm transition-all duration-150',
+                    active
+                      ? 'border-l-2 border-indigo-500 bg-indigo-500/10 font-medium text-indigo-400'
+                      : 'border-l-2 border-transparent text-gray-400 hover:bg-white/5 hover:text-white'
+                  )}
+                >
+                  <span className="mr-3 text-base">{icon}</span>
+                  <span className="flex-1">{label}</span>
+                  {count > 0 && (
+                    <span className="ml-auto rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">
+                      {count}
+                    </span>
+                  )}
+                </Link>
+              </motion.div>
             )
           })}
-        </nav>
+        </motion.nav>
 
         {/* Wallet balance (BUYER + SELLER only) */}
         {showWalletSection && (
