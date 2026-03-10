@@ -4,14 +4,17 @@ import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   useStockLevels,
-  useAdminServices,
+  useAllAccounts,
   useAddAccount,
   useBulkAddAccounts,
-} from '@/hooks/useAdmin'
+  useDeleteAccount,
+} from '@/hooks/useAccounts'
+import { useAdminServices } from '@/hooks/useAdmin'
 import { formatDate } from '@/lib/utils'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import AddAccountModal from '@/components/admin/AddAccountModal'
 import BulkAddAccountsModal from '@/components/admin/BulkAddAccountsModal'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 import {
   Select,
   SelectContent,
@@ -34,6 +37,12 @@ function accountEmail(account: Account): string {
   return creds?.email ?? creds?.username ?? ''
 }
 
+function progressBarColor(availablePct: number): string {
+  if (availablePct > 30) return 'bg-green-500'
+  if (availablePct >= 10) return 'bg-yellow-500'
+  return 'bg-red-500'
+}
+
 export default function AdminAccountsPage() {
   const searchParams = useSearchParams()
   const serviceParam = searchParams.get('service') ?? ''
@@ -44,35 +53,45 @@ export default function AdminAccountsPage() {
   const [bulkModalServiceId, setBulkModalServiceId] = useState<string | undefined>(undefined)
   const [serviceFilter, setServiceFilter] = useState(serviceParam)
   const [statusFilter, setStatusFilter] = useState('')
+  const [search, setSearch] = useState('')
+  const [deleteAccountId, setDeleteAccountId] = useState<string | null>(null)
 
-  const { data: stockLevels = [], isLoading } = useStockLevels()
+  const { data: stockLevels = [], isLoading: stockLoading } = useStockLevels()
+  const { data: allAccounts = [], isLoading: accountsLoading } = useAllAccounts()
   const { data: services = [] } = useAdminServices()
   const addAccount = useAddAccount()
   const bulkAdd = useBulkAddAccounts()
+  const deleteAccount = useDeleteAccount()
 
   useEffect(() => {
     if (serviceParam) setServiceFilter(serviceParam)
   }, [serviceParam])
 
   const sortedLevels = useMemo(() => {
-    return [...stockLevels].sort(
-      (a, b) => (a.available ?? 0) - (b.available ?? 0)
-    )
+    return [...stockLevels].sort((a, b) => (a.available ?? 0) - (b.available ?? 0))
   }, [stockLevels])
 
-  const allAccounts: Array<Account & { serviceName?: string }> = useMemo(() => {
-    const list: Array<Account & { serviceName?: string }> = []
-    stockLevels.forEach((level) => {
-      const name = level.service?.name ?? level.serviceId
-      ;(level.accounts ?? []).forEach((acc) => {
-        list.push({ ...acc, serviceName: name })
-      })
+  const serviceById = useMemo(() => {
+    const map: Record<string, { name: string; category?: string }> = {}
+    stockLevels.forEach((l) => {
+      const name = l.service?.name ?? l.serviceId
+      map[l.serviceId] = { name, category: l.service?.category }
     })
-    return list
-  }, [stockLevels])
+    services.forEach((s) => {
+      map[s.id] = { name: s.name, category: s.category }
+    })
+    return map
+  }, [stockLevels, services])
+
+  const accountsWithServiceName: Array<Account & { serviceName?: string }> = useMemo(() => {
+    return allAccounts.map((acc) => ({
+      ...acc,
+      serviceName: serviceById[acc.serviceId]?.name ?? acc.serviceId,
+    }))
+  }, [allAccounts, serviceById])
 
   const filteredAccounts = useMemo(() => {
-    let list = allAccounts
+    let list = accountsWithServiceName
     if (serviceFilter) {
       list = list.filter((a) => a.serviceId === serviceFilter)
     }
@@ -83,41 +102,95 @@ export default function AdminAccountsPage() {
     } else if (statusFilter === 'RESERVED') {
       list = list.filter((a) => a.status === 'RESERVED')
     }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      list = list.filter((a) => accountEmail(a).toLowerCase().includes(q))
+    }
     return list
-  }, [allAccounts, serviceFilter, statusFilter])
+  }, [accountsWithServiceName, serviceFilter, statusFilter, search])
 
   const handleAddSingle = (payload: {
     serviceId: string
     credentials: Record<string, unknown>
     accountEmail?: string
   }) => {
-    addAccount.mutate(payload, {
-      onSuccess: () => {
-        toast.success('Compte ajouté ✅')
-        setAddSingleOpen(false)
+    addAccount.mutate(
+      {
+        serviceId: payload.serviceId,
+        accountEmail: payload.accountEmail,
+        credentials: payload.credentials as Record<string, string>,
       },
-      onError: () => toast.error('Erreur'),
-    })
+      {
+        onSuccess: () => {
+          toast.success('Compte ajouté au stock ✅')
+          setAddSingleOpen(false)
+        },
+        onError: () => toast.error('Erreur'),
+      }
+    )
   }
 
   const handleBulk = (payload: {
     serviceId: string
     accounts: Array<{ credentials: Record<string, unknown> }>
   }) => {
-    bulkAdd.mutate(payload, {
-      onSuccess: (_, variables) => {
-        toast.success(`${variables.accounts.length} comptes ajoutés ✅`)
-        setBulkOpen(false)
+    bulkAdd.mutate(
+      {
+        serviceId: payload.serviceId,
+        accounts: payload.accounts.map((a) => a.credentials as Record<string, string>),
+      },
+      {
+        onSuccess: (_, variables) => {
+          toast.success(`${variables.accounts.length} comptes ajoutés ✅`)
+          setBulkOpen(false)
+        },
+        onError: () => toast.error('Erreur lors de l\'import ❌'),
+      }
+    )
+  }
+
+  const handleDeleteConfirm = () => {
+    if (!deleteAccountId) return
+    deleteAccount.mutate(deleteAccountId, {
+      onSuccess: () => {
+        toast.success('Compte supprimé')
+        setDeleteAccountId(null)
       },
       onError: () => toast.error('Erreur'),
     })
   }
 
+  const isLoading = stockLoading || accountsLoading
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Gestion du stock</h1>
-        <p className="mt-1 text-gray-400">Comptes disponibles par service</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Gestion du stock</h1>
+          <p className="mt-1 text-gray-400">Comptes disponibles par service</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setAddModalServiceId(undefined)
+              setAddSingleOpen(true)
+            }}
+            className="rounded-lg bg-[#6366f1] px-4 py-2 text-sm font-medium text-white hover:bg-[#5558e3]"
+          >
+            + Ajouter un compte
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setBulkModalServiceId(undefined)
+              setBulkOpen(true)
+            }}
+            className="rounded-lg border border-[#6366f1] px-4 py-2 text-sm font-medium text-[#6366f1] hover:bg-[#6366f1]/10"
+          >
+            + Ajout en masse
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -131,14 +204,13 @@ export default function AdminAccountsPage() {
             const available = level.available ?? 0
             const used = level.used ?? 0
             const total = (level.total ?? available + used) || 1
-            const pct = total ? (used / total) * 100 : 0
-            const isLow = available <= 5
-            const isZero = available === 0
-            const borderClass = isZero
-              ? 'border-red-500/50'
-              : isLow
-                ? 'border-yellow-500/50'
-                : 'border-[#1e1e1e]'
+            const availablePct = total ? (available / total) * 100 : 0
+            const borderClass =
+              available === 0
+                ? 'border-red-500/50'
+                : available <= 5
+                  ? 'border-yellow-500/50'
+                  : 'border-white/10'
             return (
               <div
                 key={level.serviceId}
@@ -166,13 +238,14 @@ export default function AdminAccountsPage() {
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#1e1e1e]">
                   <div
-                    className={`h-full ${
-                      isZero ? 'bg-red-500' : isLow ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}
-                    style={{ width: `${pct}%` }}
+                    className={`h-full ${progressBarColor(availablePct)}`}
+                    style={{ width: `${availablePct}%` }}
                   />
                 </div>
-                {isZero && (
+                <p className="mt-1 text-xs text-gray-500">
+                  {available} / {total} disponibles
+                </p>
+                {available === 0 && (
                   <p className="mt-2 text-sm text-red-400">⚠️ Stock épuisé</p>
                 )}
                 <div className="mt-3 flex gap-2">
@@ -184,7 +257,7 @@ export default function AdminAccountsPage() {
                     }}
                     className="rounded-lg border border-[#1e1e1e] bg-[#111111] px-3 py-1.5 text-sm text-white hover:bg-[#1e1e1e]"
                   >
-                    + Ajouter un compte
+                    + Ajouter
                   </button>
                   <button
                     type="button"
@@ -204,9 +277,9 @@ export default function AdminAccountsPage() {
       )}
 
       <div className="rounded-xl border border-[#1e1e1e] bg-[#111111]">
-        <div className="flex flex-col gap-4 border-b border-[#1e1e1e] p-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-4 border-b border-[#1e1e1e] p-4">
           <h3 className="font-semibold text-white">Détail du stock</h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <Select value={serviceFilter} onValueChange={(v) => setServiceFilter(v ?? '')}>
               <SelectTrigger className="w-[200px] border-[#1e1e1e] bg-[#111111] text-white">
                 <SelectValue placeholder="Tous les services" />
@@ -225,29 +298,35 @@ export default function AdminAccountsPage() {
                 })}
               </SelectContent>
             </Select>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? '')}>
-              <SelectTrigger className="w-[160px] border-[#1e1e1e] bg-[#111111] text-white">
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent className="border-[#1e1e1e] bg-[#111111]">
-                <SelectItem value="" className="text-white">
-                  Tous
-                </SelectItem>
-                <SelectItem value="AVAILABLE" className="text-white">
-                  Disponible
-                </SelectItem>
-                <SelectItem value="USED" className="text-white">
-                  Utilisé
-                </SelectItem>
-                <SelectItem value="RESERVED" className="text-white">
-                  Réservé
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-1 rounded-lg border border-[#1e1e1e] bg-[#111111] p-1">
+              {[
+                { id: '', label: 'Tous' },
+                { id: 'AVAILABLE', label: 'Disponible' },
+                { id: 'USED', label: 'Utilisé' },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setStatusFilter(t.id)}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    statusFilter === t.id ? 'bg-[#6366f1] text-white' : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <input
+              type="search"
+              placeholder="Rechercher par email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 rounded-lg border border-[#1e1e1e] bg-[#111111] px-3 text-sm text-white placeholder:text-gray-500 focus:border-[#6366f1] focus:outline-none sm:w-56"
+            />
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[500px]">
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b border-[#1e1e1e] text-left text-sm text-gray-500">
                 <th className="px-4 py-3">#</th>
@@ -255,13 +334,28 @@ export default function AdminAccountsPage() {
                 <th className="px-4 py-3">Email compte</th>
                 <th className="px-4 py-3">Statut</th>
                 <th className="px-4 py-3">Ajouté le</th>
+                <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredAccounts.map((acc, i) => (
                 <tr key={acc.id} className="border-b border-[#1e1e1e] last:border-0">
                   <td className="px-4 py-3 text-gray-400">{i + 1}</td>
-                  <td className="px-4 py-3 text-white">{acc.serviceName ?? acc.serviceId}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="h-6 w-6 shrink-0 rounded"
+                        style={{
+                          background: getGradientFromName(acc.serviceName ?? acc.serviceId),
+                        }}
+                      >
+                        <span className="flex h-full w-full items-center justify-center text-xs font-bold text-white">
+                          {(acc.serviceName ?? acc.serviceId).charAt(0)}
+                        </span>
+                      </div>
+                      <span className="text-white">{acc.serviceName ?? acc.serviceId}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-gray-400">{accountEmail(acc) || '—'}</td>
                   <td className="px-4 py-3">
                     <span
@@ -283,13 +377,34 @@ export default function AdminAccountsPage() {
                   <td className="px-4 py-3 text-sm text-gray-400">
                     {formatDate(acc.createdAt)}
                   </td>
+                  <td className="px-4 py-3">
+                    {acc.status === 'AVAILABLE' && (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteAccountId(acc.id)}
+                        className="rounded border border-red-500/30 px-2 py-1 text-xs font-medium text-red-400 hover:bg-red-500/10"
+                      >
+                        🗑️ Supprimer
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         {filteredAccounts.length === 0 && (
-          <p className="p-8 text-center text-gray-400">Aucun compte</p>
+          <div className="flex flex-col items-center py-16">
+            <span className="text-4xl">📦</span>
+            <p className="mt-4 font-medium text-white">Aucun compte en stock</p>
+            <button
+              type="button"
+              onClick={() => setAddSingleOpen(true)}
+              className="mt-4 rounded-lg bg-[#6366f1] px-4 py-2 text-sm font-medium text-white hover:bg-[#5558e3]"
+            >
+              Ajouter votre premier compte
+            </button>
+          </div>
         )}
       </div>
 
@@ -308,6 +423,16 @@ export default function AdminAccountsPage() {
         preselectedServiceId={(bulkModalServiceId ?? serviceParam) || undefined}
         onSubmit={handleBulk}
         isLoading={bulkAdd.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={!!deleteAccountId}
+        onClose={() => setDeleteAccountId(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Supprimer ce compte"
+        description="Ce compte sera définitivement retiré du stock. Cette action est irréversible."
+        confirmText="Supprimer"
+        isLoading={deleteAccount.isPending}
       />
     </div>
   )

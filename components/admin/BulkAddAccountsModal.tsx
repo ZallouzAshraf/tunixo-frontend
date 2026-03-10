@@ -22,25 +22,28 @@ import type { Service } from '@/types'
 
 type Format = 'email_password' | 'json'
 
-function parseEmailPassword(text: string): { valid: Array<{ email: string; password: string }>; invalid: string[] } {
+function parseEmailPassword(text: string): {
+  valid: Array<{ email: string; password: string }>
+  invalidLines: Array<{ lineNum: number; content: string }>
+} {
   const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
   const valid: Array<{ email: string; password: string }> = []
-  const invalid: string[] = []
-  lines.forEach((line) => {
+  const invalidLines: Array<{ lineNum: number; content: string }> = []
+  lines.forEach((line, i) => {
     const idx = line.indexOf(':')
     if (idx <= 0) {
-      invalid.push(line)
+      invalidLines.push({ lineNum: i + 1, content: line })
       return
     }
     const email = line.slice(0, idx).trim()
     const password = line.slice(idx + 1).trim()
     if (!email) {
-      invalid.push(line)
+      invalidLines.push({ lineNum: i + 1, content: line })
       return
     }
     valid.push({ email, password })
   })
-  return { valid, invalid }
+  return { valid, invalidLines }
 }
 
 function parseJson(text: string): { valid: Record<string, unknown>[]; invalid: string } | null {
@@ -88,27 +91,27 @@ export default function BulkAddAccountsModal({
 
   const parsed = useMemo(() => {
     const t = textarea.trim()
-    if (!t) return { count: 0, valid: [], invalid: [], error: null }
+    if (!t) return { count: 0, valid: [], invalidLines: [], error: null }
     if (format === 'email_password') {
-      const { valid, invalid } = parseEmailPassword(t)
+      const { valid, invalidLines } = parseEmailPassword(t)
       return {
         count: valid.length,
         valid: valid.map((v) => ({ credentials: v })),
-        invalid,
+        invalidLines,
         error: null,
       }
     }
     const result = parseJson(t)
-    if (!result) return { count: 0, valid: [], invalid: [], error: 'JSON invalide' }
+    if (!result) return { count: 0, valid: [], invalidLines: [], error: 'JSON invalide' }
     return {
       count: result.valid.length,
       valid: result.valid.map((v) => ({ credentials: v })),
-      invalid: [],
+      invalidLines: [],
       error: result.invalid || null,
     }
   }, [textarea, format])
 
-  const canSubmit = serviceId && parsed.count > 0 && parsed.invalid.length === 0 && !parsed.error
+  const canSubmit = serviceId && parsed.count > 0 && parsed.invalidLines.length === 0 && !parsed.error
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,7 +130,7 @@ export default function BulkAddAccountsModal({
         <DialogHeader>
           <DialogTitle>Ajout en masse</DialogTitle>
           <DialogDescription>
-            Collez une liste de comptes (email:password ou JSON).
+            Importez plusieurs comptes en une seule fois.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -151,46 +154,63 @@ export default function BulkAddAccountsModal({
           </div>
           <div className="space-y-2">
             <Label>Format</Label>
-            <Select value={format} onValueChange={(v) => setFormat((v as Format) ?? 'email_password')}>
-              <SelectTrigger className="w-full border-[#1e1e1e] bg-[#111111] text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-[#1e1e1e] bg-[#111111]">
-                <SelectItem value="email_password" className="text-white">
-                  email:password (un par ligne)
-                </SelectItem>
-                <SelectItem value="json" className="text-white">
-                  Tableau JSON
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-1 rounded-lg border border-[#1e1e1e] bg-[#111111] p-1">
+              <button
+                type="button"
+                onClick={() => setFormat('email_password')}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  format === 'email_password' ? 'bg-[#6366f1] text-white' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                email:password
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormat('json')}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  format === 'json' ? 'bg-[#6366f1] text-white' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                JSON
+              </button>
+            </div>
           </div>
           <div className="space-y-2">
-            <Label>Contenu</Label>
+            <Label htmlFor="bulk-content">
+              {format === 'email_password' ? 'Comptes (un par ligne)' : 'JSON array'}
+            </Label>
             <textarea
+              id="bulk-content"
               value={textarea}
               onChange={(e) => setTextarea(e.target.value)}
-              rows={10}
+              rows={8}
               placeholder={
                 format === 'email_password'
-                  ? 'compte1@tunixo.tn:password1\ncompte2@tunixo.tn:password2'
-                  : '[\n  {"email": "...", "password": "..."},\n  {"email": "...", "password": "..."}\n]'
+                  ? 'compte1@tunixo.tn:password1\ncompte2@tunixo.tn:password2\ncompte3@tunixo.tn:password3'
+                  : '[\n  {"email": "c1@tunixo.tn", "password": "pass1"},\n  {"email": "c2@tunixo.tn", "password": "pass2"}\n]'
               }
               className="w-full rounded-lg border border-[#1e1e1e] bg-[#111111] px-3 py-2 font-mono text-sm text-white placeholder:text-gray-500 focus:border-[#6366f1] focus:outline-none"
             />
             {parsed.error && (
               <p className="text-sm text-red-400">{parsed.error}</p>
             )}
-            {parsed.invalid.length > 0 && (
-              <p className="text-sm text-red-400">
-                Lignes invalides: {parsed.invalid.slice(0, 3).join(', ')}
-                {parsed.invalid.length > 3 ? '...' : ''}
+            {parsed.count > 0 && (
+              <p className="text-sm text-green-400">
+                ✅ {format === 'email_password'
+                  ? `${parsed.count} compte${parsed.count !== 1 ? 's' : ''} valide${parsed.count !== 1 ? 's' : ''}`
+                  : `${parsed.count} comptes détectés`}
               </p>
             )}
-            <p className="text-sm text-gray-400">
-              {parsed.count} compte{parsed.count !== 1 ? 's' : ''} détecté
-              {parsed.count !== 1 ? 's' : ''}
-            </p>
+            {parsed.invalidLines.length > 0 && (
+              <div className="text-sm text-red-400">
+                <p>❌ {parsed.invalidLines.length} ligne{parsed.invalidLines.length !== 1 ? 's' : ''} invalide{parsed.invalidLines.length !== 1 ? 's' : ''}</p>
+                {parsed.invalidLines.map(({ lineNum }) => (
+                  <p key={lineNum} className="mt-1 text-xs">
+                    Ligne {lineNum}: format invalide — attendu email:password
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
           <DialogFooter showCloseButton={false} className="gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>

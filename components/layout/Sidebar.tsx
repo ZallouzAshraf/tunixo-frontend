@@ -13,12 +13,24 @@ import {
   Wallet,
   Settings,
   LogOut,
+  Banknote,
+  ArrowDownToLine,
+  Home,
 } from 'lucide-react'
 
-const NAV_ITEMS = [
+const NAV_ITEMS_BASE = [
   { href: '/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
   { href: '/services', label: 'Services', icon: Package },
   { href: '/orders', label: 'Mes commandes', icon: ShoppingBag },
+]
+
+const NAV_ITEMS_SELLER = [
+  { href: '/seller/deposits', label: 'Mes dépôts', icon: Banknote },
+  { href: '/seller/withdrawals', label: 'Mes retraits', icon: ArrowDownToLine },
+  { href: '/seller', label: 'Espace vendeur', icon: Home },
+]
+
+const NAV_ITEMS_AFTER = [
   { href: '/wallet', label: 'Wallet', icon: Wallet },
   { href: '/settings', label: 'Paramètres', icon: Settings },
 ]
@@ -53,7 +65,7 @@ export default function Sidebar() {
         </div>
 
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-3">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          {[...NAV_ITEMS_BASE, ...(user?.role === 'SELLER' ? NAV_ITEMS_SELLER : []), ...NAV_ITEMS_AFTER].map(({ href, label, icon: Icon }) => {
             const isActive =
               pathname === href ||
               (href !== '/dashboard' && pathname.startsWith(href))

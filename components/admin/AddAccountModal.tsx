@@ -47,6 +47,7 @@ export default function AddAccountModal({
   useEffect(() => {
     if (isOpen && preselectedServiceId) setServiceId(preselectedServiceId)
   }, [isOpen, preselectedServiceId])
+  const [jsonPreviewOpen, setJsonPreviewOpen] = useState(false)
   const [credRows, setCredRows] = useState<Array<{ key: string; value: string }>>([
     { key: 'email', value: '' },
     { key: 'password', value: '' },
@@ -112,17 +113,19 @@ export default function AddAccountModal({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="accountEmail">Email compte (optionnel)</Label>
+            <Label htmlFor="accountEmail">Email du compte (optionnel)</Label>
             <Input
               id="accountEmail"
+              type="email"
               value={accountEmail}
               onChange={(e) => setAccountEmail(e.target.value)}
               placeholder="compte@tunixo.tn"
               className="bg-[#111111] border-[#1e1e1e] text-white"
             />
+            <p className="text-xs text-gray-500">Pour identifier le compte dans le stock.</p>
           </div>
           <div className="space-y-2">
-            <Label>Identifiants (clé / valeur)</Label>
+            <Label>Credentials</Label>
             {credRows.map((row, i) => (
               <div key={i} className="flex gap-2">
                 <Input
@@ -154,8 +157,20 @@ export default function AddAccountModal({
               + Ajouter un champ
             </button>
           </div>
-          <div className="rounded-lg bg-[#1e1e1e] p-2 font-mono text-xs text-gray-400">
-            <pre>{JSON.stringify(credentials, null, 2)}</pre>
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setJsonPreviewOpen((o) => !o)}
+              className="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-white"
+            >
+              <span>{jsonPreviewOpen ? '▼' : '▶'}</span>
+              Aperçu JSON
+            </button>
+            {jsonPreviewOpen && (
+              <div className="rounded-lg bg-[#1e1e1e] p-2 font-mono text-xs text-gray-400">
+                <pre>{JSON.stringify(credentials, null, 2)}</pre>
+              </div>
+            )}
           </div>
           <DialogFooter showCloseButton={false} className="gap-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
