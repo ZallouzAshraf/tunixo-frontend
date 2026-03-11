@@ -70,9 +70,9 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: [{ url: "/assets/logo-icon.png", type: "image/svg+xml" }],
-    apple: "/assets/logo-icon.png",
-    shortcut: "/assets/logo-icon.png",
+    icon: [{ url: "/icon", type: "image/png" }, { url: "/assets/logo-icon.png", type: "image/png" }],
+    apple: "/apple-icon",
+    shortcut: "/icon",
   },
 
   manifest: "/site.webmanifest",

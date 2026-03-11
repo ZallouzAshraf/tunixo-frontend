@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  async redirects() {
+    return [{ source: "/favicon.ico", destination: "/icon", permanent: false }];
+  },
 };
 
 export default nextConfig;
