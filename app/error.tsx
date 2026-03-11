@@ -1,27 +1,35 @@
-'use client'
+"use client";
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Error({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
-  const router = useRouter()
-  const isDev = process.env.NODE_ENV === 'development'
+  const router = useRouter();
+  const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
     // Log to console in dev
     if (isDev) {
-      console.error(error)
+      console.error(error);
     }
-  }, [error, isDev])
+  }, [error, isDev]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] px-4">
+      <Image
+        src="/assets/logo.png"
+        alt="Tunixo"
+        width={120}
+        height={32}
+        className="h-8 w-auto mb-8"
+      />
       <h1 className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-8xl font-black text-transparent">
         500
       </h1>
@@ -43,12 +51,12 @@ export default function Error({
         </button>
         <button
           type="button"
-          onClick={() => router.push('/')}
+          onClick={() => router.push("/")}
           className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-gray-300 transition-colors hover:bg-white/5"
         >
           Accueil
         </button>
       </div>
     </div>
-  )
+  );
 }
