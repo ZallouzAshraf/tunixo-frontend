@@ -8,6 +8,7 @@ interface AuthState {
   isLoading: boolean
   isAuthenticated: boolean
   setAuth: (user: User, accessToken: string) => void
+  setAccessToken: (accessToken: string) => void
   clearAuth: () => void
   setLoading: (loading: boolean) => void
 }
@@ -22,7 +23,7 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, accessToken) => {
         if (typeof window !== 'undefined') {
           localStorage.setItem('access_token', accessToken)
-          localStorage.setItem('user_role', user.role)
+          if (user) localStorage.setItem('user_role', user.role)
         }
         set({
           user,
@@ -30,6 +31,12 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
           isLoading: false,
         })
+      },
+      setAccessToken: (accessToken) => {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('access_token', accessToken)
+        }
+        set({ accessToken })
       },
       clearAuth: () => {
         if (typeof window !== 'undefined') {
