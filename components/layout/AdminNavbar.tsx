@@ -18,18 +18,16 @@ import { useAuthStore } from '@/store/authStore'
 const TITLES: Record<string, string> = {
   '/admin': 'Dashboard Admin',
   '/admin/orders': 'Commandes',
-  '/admin/deposits': 'Dépôts',
-  '/admin/withdrawals': 'Retraits',
   '/admin/users': 'Utilisateurs',
-  '/admin/services': 'Services',
-  '/admin/accounts': 'Stock',
+  '/admin/products': 'Produits',
+  '/admin/giftcodes': 'Codes cadeaux',
+  '/admin/stats': 'Statistiques',
   '/admin/settings': 'Paramètres',
 }
 
 function getPageTitle(pathname: string): string {
   if (pathname in TITLES) return TITLES[pathname]
   if (pathname.startsWith('/admin/users/')) return 'Détail utilisateur'
-  if (pathname.startsWith('/admin/services/')) return 'Service'
   return 'Admin'
 }
 

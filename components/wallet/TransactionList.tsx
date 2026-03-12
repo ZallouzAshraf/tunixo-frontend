@@ -2,7 +2,7 @@
 
 import type { Transaction } from '@/types'
 import { formatTND, formatDateTime } from '@/lib/utils'
-import { ArrowDownCircle, ArrowUpCircle, ArrowRightCircle } from 'lucide-react'
+import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
@@ -16,19 +16,13 @@ function filterTransactions(
 ): Transaction[] {
   if (filter === 'all') return transactions
   if (filter === 'credit') return transactions.filter((t) => t.type === 'CREDIT')
-  return transactions.filter(
-    (t) => t.type === 'DEBIT' || t.type === 'WITHDRAWAL'
-  )
+  return transactions.filter((t) => t.type === 'DEBIT')
 }
 
 function TransactionRow({ t }: { t: Transaction }) {
   const isCredit = t.type === 'CREDIT'
-  const isDebit = t.type === 'DEBIT' || t.type === 'WITHDRAWAL'
-  const Icon = isCredit
-    ? ArrowDownCircle
-    : t.type === 'WITHDRAWAL'
-      ? ArrowRightCircle
-      : ArrowUpCircle
+  const isDebit = t.type === 'DEBIT'
+  const Icon = isCredit ? ArrowDownCircle : ArrowUpCircle
 
   return (
     <div className="flex items-center justify-between gap-4 border-b border-[#1e1e1e] py-4 last:border-0">
@@ -37,8 +31,7 @@ function TransactionRow({ t }: { t: Transaction }) {
           className={cn(
             'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
             isCredit && 'bg-green-500/10 text-green-500',
-            t.type === 'DEBIT' && 'bg-red-500/10 text-red-500',
-            t.type === 'WITHDRAWAL' && 'bg-gray-500/10 text-gray-400'
+            isDebit && 'bg-red-500/10 text-red-500'
           )}
         >
           <Icon className="h-5 w-5" />

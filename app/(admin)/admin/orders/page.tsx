@@ -3,11 +3,10 @@
 import { useState, useMemo } from 'react'
 import {
   useAdminOrders,
-  useDeliverOrder,
+  useRetryOrder,
 } from '@/hooks/useAdmin'
 import { formatTND, formatDate } from '@/lib/utils'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
-import ConfirmDialog from '@/components/common/ConfirmDialog'
 import StatusBadge from '@/components/common/StatusBadge'
 import { toast } from 'sonner'
 import type { Order } from '@/types'
@@ -15,13 +14,20 @@ import type { Order } from '@/types'
 const FILTERS = [
   { id: '', label: 'Toutes' },
   { id: 'PENDING', label: 'En attente' },
-  { id: 'ACTIVE', label: 'Actives' },
+  { id: 'PROCESSING', label: 'En cours' },
+  { id: 'COMPLETED', label: 'Complétées' },
   { id: 'FAILED', label: 'Échouées' },
 ] as const
 
 const LIMIT = 20
 
-function Copyable({ value, children }: { value: string; children: React.ReactNode }) {
+function Copyable({
+  value,
+  children,
+}: {
+  value: string
+  children: React.ReactNode
+}) {
   const copy = () => {
     navigator.clipboard.writeText(value)
     toast.success('Copié')
@@ -41,7 +47,7 @@ export default function AdminOrdersPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [deliverOrderId, setDeliverOrderId] = useState<string | null>(null)
+  const [showCodeOrderId, setShowCodeOrderId] = useState<string | null>(null)
 
   const { data, isLoading } = useAdminOrders({
     status: statusFilter || undefined,
@@ -49,7 +55,7 @@ export default function AdminOrdersPage() {
     limit: LIMIT,
     search: search.trim() || undefined,
   })
-  const deliverOrder = useDeliverOrder()
+  const retryOrder = useRetryOrder()
 
   const paginated = data && !Array.isArray(data) ? data : null
   const orders: Order[] = paginated?.data ?? (Array.isArray(data) ? data : [])
@@ -63,20 +69,26 @@ export default function AdminOrdersPage() {
       (o) =>
         o.user?.email?.toLowerCase().includes(q) ||
         o.user?.fullName?.toLowerCase().includes(q) ||
-        o.service?.name?.toLowerCase().includes(q)
+        o.product?.name?.toLowerCase().includes(q),
     )
   }, [orders, search])
 
-  const handleDeliver = () => {
-    if (!deliverOrderId) return
-    deliverOrder.mutate(deliverOrderId, {
-      onSuccess: () => {
-        toast.success('Commande marquée livrée')
-        setDeliverOrderId(null)
+  const handleRetry = (orderId: string) => {
+    retryOrder.mutate(orderId, {
+      onSuccess: (data: { success: boolean; message?: string }) => {
+        if (data.success) {
+          toast.success('Retry envoyé')
+        } else {
+          toast.error(data.message ?? 'Échec du retry')
+        }
       },
-      onError: () => toast.error('Erreur lors de la livraison'),
+      onError: () => toast.error('Erreur'),
     })
   }
+
+  const orderWithCode = showCodeOrderId
+    ? orders.find((o) => o.id === showCodeOrderId)
+    : null
 
   return (
     <div className="space-y-6">
@@ -90,7 +102,10 @@ export default function AdminOrdersPage() {
             <button
               key={f.id}
               type="button"
-              onClick={() => { setStatusFilter(f.id); setPage(1) }}
+              onClick={() => {
+                setStatusFilter(f.id)
+                setPage(1)
+              }}
               className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 statusFilter === f.id
                   ? 'bg-[#6366f1] text-white'
@@ -103,7 +118,7 @@ export default function AdminOrdersPage() {
         </div>
         <input
           type="search"
-          placeholder="Rechercher (email, service...)"
+          placeholder="Rechercher (email, produit...)"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-10 rounded-lg border border-[#1e1e1e] bg-[#111111] px-4 text-white placeholder:text-gray-500 focus:border-[#6366f1] focus:outline-none sm:w-64"
@@ -123,8 +138,8 @@ export default function AdminOrdersPage() {
                   <tr className="border-b border-[#1e1e1e] text-left text-sm text-gray-500">
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Client</th>
-                    <th className="px-4 py-3">Service</th>
-                    <th className="px-4 py-3">Email activé</th>
+                    <th className="px-4 py-3">Produit</th>
+                    <th className="px-4 py-3">Player ID / Code</th>
                     <th className="px-4 py-3">Montant</th>
                     <th className="px-4 py-3">Statut</th>
                     <th className="px-4 py-3">Date</th>
@@ -144,24 +159,40 @@ export default function AdminOrdersPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-white">
-                          {order.user?.fullName ?? order.user?.email ?? order.userId}
+                          {order.user?.fullName ??
+                            order.user?.email ??
+                            order.userId}
                         </div>
                         {order.user?.email && (
-                          <div className="text-xs text-gray-500">{order.user.email}</div>
+                          <div className="text-xs text-gray-500">
+                            {order.user.email}
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-white">
-                        {order.service?.name ?? '—'}
+                        {order.product?.name ?? '—'}
                       </td>
                       <td className="px-4 py-3">
-                        {order.serviceEmail ? (
-                          <Copyable value={order.serviceEmail}>{order.serviceEmail}</Copyable>
+                        {order.playerId ? (
+                          <span className="text-gray-400">
+                            {order.playerId}
+                          </span>
+                        ) : order.status === 'COMPLETED' &&
+                          order.product?.serviceType === 'GIFTCARD' &&
+                          order.deliveredCode ? (
+                          <button
+                            type="button"
+                            onClick={() => setShowCodeOrderId(order.id)}
+                            className="text-[#6366f1] hover:underline"
+                          >
+                            🎁 Voir code
+                          </button>
                         ) : (
                           '—'
                         )}
                       </td>
                       <td className="px-4 py-3 text-white">
-                        {formatTND(order.amountPaid)}
+                        {formatTND(order.amountPaid)} TND
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={order.status} />
@@ -170,15 +201,17 @@ export default function AdminOrdersPage() {
                         {formatDate(order.createdAt)}
                       </td>
                       <td className="px-4 py-3">
-                        {order.status === 'PENDING' && (
-                          <button
-                            type="button"
-                            onClick={() => setDeliverOrderId(order.id)}
-                            className="rounded bg-green-500/20 px-2 py-1 text-xs font-medium text-green-400 hover:bg-green-500/30"
-                          >
-                            Marquer livré
-                          </button>
-                        )}
+                        {order.status === 'FAILED' &&
+                          order.product?.serviceType === 'TOPUP' && (
+                            <button
+                              type="button"
+                              onClick={() => handleRetry(order.id)}
+                              disabled={retryOrder.isPending}
+                              className="rounded bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-400 hover:bg-blue-500/30 disabled:opacity-50"
+                            >
+                              🔄 Retry
+                            </button>
+                          )}
                       </td>
                     </tr>
                   ))}
@@ -217,15 +250,31 @@ export default function AdminOrdersPage() {
         )}
       </div>
 
-      <ConfirmDialog
-        isOpen={!!deliverOrderId}
-        onClose={() => setDeliverOrderId(null)}
-        onConfirm={handleDeliver}
-        title="Marquer livré"
-        description="Confirmez que cette commande a été livrée (email activé)."
-        confirmText="Marquer livré"
-        isLoading={deliverOrder.isPending}
-      />
+      {orderWithCode?.deliveredCode && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setShowCodeOrderId(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm text-gray-500">Code livré</p>
+            <p className="mt-2 text-xl font-bold tracking-widest text-white">
+              {orderWithCode.deliveredCode}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowCodeOrderId(null)}
+              className="mt-4 rounded-lg bg-[#6366f1] px-4 py-2 text-sm text-white"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

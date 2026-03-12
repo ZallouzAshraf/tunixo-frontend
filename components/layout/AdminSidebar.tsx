@@ -11,8 +11,6 @@ import {
   Package,
   CreditCard,
   ShoppingBag,
-  ArrowDownCircle,
-  ArrowUpCircle,
   Settings,
   LogOut,
   ExternalLink,
@@ -24,7 +22,7 @@ const items: Array<{
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: "orders" | "deposits" | "withdrawals";
+  badge?: "orders";
 }> = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   {
@@ -33,35 +31,20 @@ const items: Array<{
     icon: ShoppingBag,
     badge: "orders",
   },
-  {
-    href: "/admin/deposits",
-    label: "Dépôts",
-    icon: ArrowDownCircle,
-    badge: "deposits",
-  },
-  {
-    href: "/admin/withdrawals",
-    label: "Retraits",
-    icon: ArrowUpCircle,
-    badge: "withdrawals",
-  },
   { href: "/admin/users", label: "Utilisateurs", icon: Users },
-  { href: "/admin/services", label: "Services", icon: Package },
-  { href: "/admin/accounts", label: "Stock", icon: CreditCard },
+  { href: "/admin/products", label: "Produits", icon: Package },
+  { href: "/admin/giftcodes", label: "Codes cadeaux", icon: CreditCard },
+  { href: "/admin/stats", label: "Statistiques", icon: LayoutDashboard },
   { href: "/admin/settings", label: "Paramètres", icon: Settings },
 ];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { data: stats } = useDashboardStats();
-  const pendingOrders = stats?.orders?.pending ?? 0;
-  const pendingDeposits = stats?.deposits?.pending ?? 0;
-  const pendingWithdrawals = stats?.withdrawals?.pending ?? 0;
+  const pendingOrders = stats?.pendingOrders ?? 0;
 
   const getBadge = (badge: string) => {
     if (badge === "orders") return pendingOrders;
-    if (badge === "deposits") return pendingDeposits;
-    if (badge === "withdrawals") return pendingWithdrawals;
     return 0;
   };
 

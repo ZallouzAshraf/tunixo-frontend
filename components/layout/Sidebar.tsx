@@ -21,30 +21,18 @@ type NavItem =
       icon: string;
       label: string;
       href: string;
-      badge?: "pendingOrders" | "pendingDeposits" | "pendingWithdrawals";
+      badge?: "pendingOrders";
     };
 
 function getNavItems(
   role: User["role"],
-  badgeCounts: { orders: number; deposits: number; withdrawals: number },
+  pendingOrdersCount: number,
 ): NavItem[] {
   const BUYER: NavItem[] = [
     { icon: "🏠", label: "Tableau de bord", href: "/dashboard" },
-    { icon: "🛒", label: "Services", href: "/services" },
+    { icon: "🎮", label: "Top-up & Recharges", href: "/products" },
     { icon: "📦", label: "Mes commandes", href: "/orders" },
     { icon: "👛", label: "Wallet", href: "/wallet" },
-    { icon: "⚙️", label: "Paramètres", href: "/settings" },
-  ];
-  const SELLER: NavItem[] = [
-    { icon: "🏠", label: "Tableau de bord", href: "/dashboard" },
-    { icon: "🛒", label: "Services", href: "/services" },
-    { icon: "📦", label: "Mes commandes", href: "/orders" },
-    { icon: "👛", label: "Wallet", href: "/wallet" },
-    { divider: true },
-    { icon: "💵", label: "Espace vendeur", href: "/seller" },
-    { icon: "💰", label: "Mes dépôts", href: "/seller/deposits" },
-    { icon: "💸", label: "Mes retraits", href: "/seller/withdrawals" },
-    { divider: true },
     { icon: "⚙️", label: "Paramètres", href: "/settings" },
   ];
   const ADMIN: NavItem[] = [
@@ -55,21 +43,11 @@ function getNavItems(
       href: "/admin/orders",
       badge: "pendingOrders",
     },
-    {
-      icon: "💰",
-      label: "Dépôts",
-      href: "/admin/deposits",
-      badge: "pendingDeposits",
-    },
-    {
-      icon: "💸",
-      label: "Retraits",
-      href: "/admin/withdrawals",
-      badge: "pendingWithdrawals",
-    },
     { icon: "👥", label: "Utilisateurs", href: "/admin/users" },
-    { icon: "🛒", label: "Services", href: "/admin/services" },
-    { icon: "📦", label: "Stock", href: "/admin/accounts" },
+    { icon: "🛒", label: "Produits", href: "/admin/products" },
+    { icon: "🎁", label: "Codes cadeaux", href: "/admin/giftcodes" },
+    { divider: true },
+    { icon: "📊", label: "Statistiques", href: "/admin/stats" },
     { divider: true },
     { icon: "🏠", label: "Vue client", href: "/dashboard" },
   ];
@@ -77,18 +55,11 @@ function getNavItems(
   if (role === "ADMIN") {
     return ADMIN.map((item) => {
       if ("badge" in item && item.badge) {
-        const count =
-          item.badge === "pendingOrders"
-            ? badgeCounts.orders
-            : item.badge === "pendingDeposits"
-              ? badgeCounts.deposits
-              : badgeCounts.withdrawals;
         return { ...item, badge: item.badge } as NavItem;
       }
       return item;
     });
   }
-  if (role === "SELLER") return SELLER;
   return BUYER;
 }
 
@@ -112,12 +83,8 @@ export default function Sidebar() {
 
   const role = user?.role ?? "BUYER";
   const { data: dashboardStats } = useDashboardStats(role === "ADMIN");
-  const badgeCounts = {
-    orders: dashboardStats?.orders?.pending ?? 0,
-    deposits: dashboardStats?.deposits?.pending ?? 0,
-    withdrawals: dashboardStats?.withdrawals?.pending ?? 0,
-  };
-  const navItems = getNavItems(role, badgeCounts);
+  const pendingOrdersCount = dashboardStats?.pendingOrders ?? 0;
+  const navItems = getNavItems(role, pendingOrdersCount);
 
   const handleLogoutClick = () => setLogoutConfirmOpen(true);
 
@@ -126,7 +93,7 @@ export default function Sidebar() {
     logout();
   };
 
-  const showWalletSection = role === "BUYER" || role === "SELLER";
+  const showWalletSection = role === "BUYER";
 
   return (
     <>
@@ -153,7 +120,6 @@ export default function Sidebar() {
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        {/* Logo + role badge */}
         <div className="flex items-center gap-2 border-b border-[#1e1e1e] px-4 py-5">
           <Link
             href={role === "ADMIN" ? "/admin" : "/dashboard"}
@@ -173,14 +139,8 @@ export default function Sidebar() {
               Admin
             </span>
           )}
-          {role === "SELLER" && (
-            <span className="rounded-full border border-indigo-500/30 bg-indigo-500/20 px-2 py-0.5 text-xs font-medium text-indigo-400">
-              Vendeur
-            </span>
-          )}
         </div>
 
-        {/* Nav items */}
         <motion.nav
           className="flex flex-1 flex-col gap-0 overflow-y-auto p-2"
           variants={staggerContainer}
@@ -200,14 +160,7 @@ export default function Sidebar() {
               NavItem,
               { divider: true }
             >;
-            const count =
-              badge === "pendingOrders"
-                ? badgeCounts.orders
-                : badge === "pendingDeposits"
-                  ? badgeCounts.deposits
-                  : badge === "pendingWithdrawals"
-                    ? badgeCounts.withdrawals
-                    : 0;
+            const count = badge === "pendingOrders" ? pendingOrdersCount : 0;
             const active = isActive(pathname, href);
             return (
               <motion.div key={href} variants={fadeInLeft}>
@@ -234,7 +187,6 @@ export default function Sidebar() {
           })}
         </motion.nav>
 
-        {/* Wallet balance (BUYER + SELLER only) */}
         {showWalletSection && (
           <div className="mx-3 mb-3 rounded-xl border border-white/10 bg-white/5 p-3">
             <p className="mb-1 text-xs text-gray-400">Solde wallet</p>
@@ -250,7 +202,6 @@ export default function Sidebar() {
           </div>
         )}
 
-        {/* User section */}
         <div className="mx-3 mb-3 rounded-xl border border-white/10 bg-white/5 p-3">
           <div className="mb-3 flex items-center gap-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-sm font-medium text-indigo-400">

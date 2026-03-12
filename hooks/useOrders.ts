@@ -2,6 +2,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Order } from '@/types'
 
+export interface CreateOrderInput {
+  productId: string
+  playerId?: string
+  zoneId?: string
+}
+
+export interface CreateOrderResponse {
+  order: Order
+  autoDelivered: boolean
+}
+
 export function useOrders() {
   return useQuery({
     queryKey: ['orders'],
@@ -23,11 +34,11 @@ export function useOrder(id: string) {
   })
 }
 
-export function useCancelOrder() {
+export function useCreateOrder() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (orderId: string) => {
-      const res = await api.delete(`/orders/${orderId}`)
+    mutationFn: async (data: CreateOrderInput) => {
+      const res = await api.post<CreateOrderResponse>('/orders', data)
       return res.data
     },
     onSuccess: () => {

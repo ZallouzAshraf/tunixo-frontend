@@ -31,8 +31,7 @@ import { MoreHorizontal } from 'lucide-react'
 
 const ROLE_FILTERS = [
   { id: '', label: 'Tous' },
-  { id: 'BUYER', label: 'Buyers' },
-  { id: 'SELLER', label: 'Sellers' },
+  { id: 'BUYER', label: 'Acheteurs' },
   { id: 'ADMIN', label: 'Admins' },
 ] as const
 
@@ -41,15 +40,8 @@ function RoleBadge({ role }: { role: string }) {
   const classes =
     upper === 'ADMIN'
       ? 'bg-red-500/20 text-red-400 border-red-500/30'
-      : upper === 'SELLER'
-        ? 'bg-[#6366f1]/20 text-[#6366f1] border-[#6366f1]/30'
-        : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-  const label =
-    upper === 'ADMIN'
-      ? 'Admin'
-      : upper === 'SELLER'
-        ? 'Vendeur'
-        : 'Acheteur'
+      : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+  const label = upper === 'ADMIN' ? 'Admin' : 'Acheteur'
   return (
     <span
       className={`rounded-full border px-2 py-0.5 text-xs font-medium ${classes}`}
@@ -65,7 +57,7 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState('')
   const [page, setPage] = useState(1)
   const [roleModalUser, setRoleModalUser] = useState<User | null>(null)
-  const [selectedRole, setSelectedRole] = useState<'BUYER' | 'SELLER' | 'ADMIN'>('BUYER')
+  const [selectedRole, setSelectedRole] = useState<'BUYER' | 'ADMIN'>('BUYER')
 
   const { data, isLoading } = useAdminUsers({
     page,
@@ -109,7 +101,7 @@ export default function AdminUsersPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Utilisateurs</h1>
         <p className="mt-1 text-gray-400">
-          Total: {total} • Acheteurs • Vendeurs • Admins
+          Total: {total} • Acheteurs • Admins
         </p>
       </div>
 
@@ -274,11 +266,10 @@ export default function AdminUsersPage() {
             <div className="py-2">
               <select
                 value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as 'BUYER' | 'SELLER' | 'ADMIN')}
+                onChange={(e) => setSelectedRole(e.target.value as 'BUYER' | 'ADMIN')}
                 className="w-full rounded-lg border border-[#1e1e1e] bg-[#111111] px-3 py-2 text-white focus:border-[#6366f1] focus:outline-none"
               >
                 <option value="BUYER">Acheteur</option>
-                <option value="SELLER">Vendeur</option>
                 <option value="ADMIN">Admin</option>
               </select>
             </div>

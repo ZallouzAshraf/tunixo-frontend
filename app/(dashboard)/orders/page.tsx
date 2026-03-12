@@ -3,57 +3,36 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useOrders } from '@/hooks/useOrders'
-import { useCancelOrder } from '@/hooks/useOrders'
 import OrderCard from '@/components/orders/OrderCard'
 import OrderCardSkeleton from '@/components/skeletons/OrderCardSkeleton'
-import ConfirmDialog from '@/components/common/ConfirmDialog'
 import EmptyState from '@/components/common/EmptyState'
 import { fadeIn, staggerContainer, staggerItem } from '@/lib/animations'
 import type { Order } from '@/types'
-import { toast } from 'sonner'
 
 const FILTERS = [
   { id: 'all' as const, label: 'Toutes' },
-  { id: 'active' as const, label: 'Actives' },
-  { id: 'pending' as const, label: 'En attente' },
-  { id: 'expired' as const, label: 'Expirées' },
+  { id: 'completed' as const, label: 'Complétées' },
+  { id: 'processing' as const, label: 'En cours' },
+  { id: 'failed' as const, label: 'Échouées' },
 ] as const
 
-type FilterId = 'all' | 'active' | 'pending' | 'expired'
+type FilterId = 'all' | 'completed' | 'processing' | 'failed'
 
 function filterOrders(orders: Order[], filter: FilterId): Order[] {
   if (filter === 'all') return orders
-  if (filter === 'active') return orders.filter((o) => o.status === 'ACTIVE')
-  if (filter === 'pending') return orders.filter((o) => o.status === 'PENDING')
-  if (filter === 'expired') return orders.filter((o) => o.status === 'EXPIRED')
+  if (filter === 'completed') return orders.filter((o) => o.status === 'COMPLETED')
+  if (filter === 'processing') {
+    return orders.filter((o) => o.status === 'PENDING' || o.status === 'PROCESSING')
+  }
+  if (filter === 'failed') return orders.filter((o) => o.status === 'FAILED')
   return orders
 }
 
 export default function OrdersPage() {
   const [filter, setFilter] = useState<FilterId>('all')
-  const [cancelTarget, setCancelTarget] = useState<Order | null>(null)
 
   const { data: orders = [], isLoading } = useOrders()
-  const cancelOrder = useCancelOrder()
-
   const filtered = useMemo(() => filterOrders(orders, filter), [orders, filter])
-
-  const handleCancelClick = (order: Order) => setCancelTarget(order)
-  const handleCancelConfirm = () => {
-    if (!cancelTarget) return
-    cancelOrder.mutate(cancelTarget.id, {
-      onSuccess: () => {
-        toast.success(
-          `Commande annulée — ${cancelTarget.amountPaid.toFixed(3)} TND remboursé`
-        )
-        setCancelTarget(null)
-        window.location.href = '/orders'
-      },
-      onError: () => {
-        toast.error('Impossible d\'annuler la commande')
-      },
-    })
-  }
 
   return (
     <motion.div
@@ -96,8 +75,8 @@ export default function OrdersPage() {
         <EmptyState
           icon="📦"
           title="Aucune commande"
-          description="Vous n'avez pas encore commandé de service."
-          action={{ label: 'Découvrir les services', href: '/services' }}
+          description="Vous n'avez pas encore commandé."
+          action={{ label: 'Découvrir les produits', href: '/products' }}
         />
       ) : (
         <motion.div
@@ -108,24 +87,11 @@ export default function OrdersPage() {
         >
           {filtered.map((order) => (
             <motion.div key={order.id} variants={staggerItem}>
-              <OrderCard
-                order={order}
-                onCancel={handleCancelClick}
-              />
+              <OrderCard order={order} />
             </motion.div>
           ))}
         </motion.div>
       )}
-
-      <ConfirmDialog
-        isOpen={!!cancelTarget}
-        onClose={() => setCancelTarget(null)}
-        onConfirm={handleCancelConfirm}
-        title="Annuler la commande"
-        description="Êtes-vous sûr de vouloir annuler cette commande ? Le montant vous sera remboursé sur votre wallet."
-        confirmText="Annuler la commande"
-        isLoading={cancelOrder.isPending}
-      />
     </motion.div>
   )
 }

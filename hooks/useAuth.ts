@@ -17,7 +17,6 @@ function applyAuthSuccess(data: AuthResponse) {
 
 function getRedirectForRole(role: string): string {
   if (role === 'ADMIN') return '/admin'
-  if (role === 'SELLER') return '/seller'
   return '/dashboard'
 }
 
@@ -66,15 +65,14 @@ export function useRegister() {
   const [error, setError] = useState<string | null>(null)
 
   const register = useCallback(
-    async (payload: { email: string; password: string; fullName: string; role: 'BUYER' | 'SELLER' }) => {
+    async (payload: { email: string; password: string; fullName: string; role: 'BUYER' }) => {
       setIsLoading(true)
       setError(null)
       try {
         const { data } = await api.post<AuthResponse>('/auth/register', payload)
         const res = data as unknown as AuthResponse
         applyAuthSuccess(res)
-        const redirect = res.user.role === 'SELLER' ? '/seller' : '/dashboard'
-        router.push(redirect)
+        router.push('/dashboard')
       } catch (err: unknown) {
         const status = err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { status?: number } }).response?.status

@@ -19,8 +19,10 @@ export default function DashboardPage() {
 
   const balance = walletData?.balance ?? 0
   const totalOrders = orders.length
-  const activeCount = orders.filter((o) => o.status === 'ACTIVE').length
-  const pendingCount = orders.filter((o) => o.status === 'PENDING').length
+  const activeCount = orders.filter((o) => o.status === 'COMPLETED').length
+  const pendingCount = orders.filter(
+    (o) => o.status === 'PENDING' || o.status === 'PROCESSING',
+  ).length
   const recentOrders = orders.slice(0, 5)
 
   const isLoading = walletLoading || ordersLoading
@@ -37,7 +39,6 @@ export default function DashboardPage() {
       animate="animate"
       variants={fadeIn}
     >
-      {/* Welcome header */}
       <div>
         <h2 className="text-2xl font-bold text-white">
           Bonjour, {fullName} 👋
@@ -47,7 +48,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats cards */}
       <motion.div
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
         variants={staggerContainer}
@@ -79,7 +79,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-gray-500">Commandes totales</p>
               <p className="text-2xl font-bold text-white">{totalOrders}</p>
-              <p className="text-xs text-gray-500">{activeCount} actives</p>
+              <p className="text-xs text-gray-500">{activeCount} complétées</p>
             </div>
           </div>
         </motion.div>
@@ -88,9 +88,9 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚡</span>
             <div>
-              <p className="text-sm text-gray-500">Abonnements actifs</p>
+              <p className="text-sm text-gray-500">Top-ups complétés</p>
               <p className="text-2xl font-bold text-white">{activeCount}</p>
-              <p className="text-xs text-gray-500">En cours</p>
+              <p className="text-xs text-gray-500">Livrés</p>
             </div>
           </div>
         </motion.div>
@@ -99,7 +99,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">⏳</span>
             <div>
-              <p className="text-sm text-gray-500">En attente</p>
+              <p className="text-sm text-gray-500">En cours</p>
               <p className="text-2xl font-bold text-white">{pendingCount}</p>
               <p className="text-xs text-gray-500">En traitement</p>
             </div>
@@ -107,14 +107,13 @@ export default function DashboardPage() {
         </motion.div>
       </motion.div>
 
-      {/* Wallet empty banner */}
       {balance === 0 && (
         <div className="rounded-xl bg-gradient-to-r from-[#6366f1]/30 to-[#8b5cf6]/30 border border-[#6366f1]/30 p-6">
           <p className="text-lg font-semibold text-white">
             Votre wallet est vide
           </p>
           <p className="mt-1 text-gray-300">
-            Rechargez pour commander vos premiers abonnements
+            Rechargez pour top-up vos jeux préférés
           </p>
           <Link
             href="/wallet"
@@ -126,43 +125,42 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Quick actions */}
       <div>
         <h3 className="mb-4 text-lg font-semibold text-white">
           Actions rapides
         </h3>
         <div className="grid gap-4 sm:grid-cols-3">
           <Link
-            href="/services"
+            href="/products"
             className="group flex items-center gap-4 rounded-xl border border-[#1e1e1e] bg-[#111111] p-5 transition-all duration-200 hover:border-[#6366f1]/50"
           >
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#6366f1]/20 text-2xl">
-              🛒
+              🎮
             </span>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-white group-hover:text-[#6366f1]">
-                Parcourir les services
+                Top-up jeux
               </p>
               <p className="text-sm text-gray-500">
-                Cursor, ChatGPT, Adobe et plus
+                Free Fire, PUBG et plus
               </p>
             </div>
             <ArrowRight className="h-5 w-5 shrink-0 text-gray-500 group-hover:text-[#6366f1]" />
           </Link>
 
           <Link
-            href="/wallet"
+            href="/products?category=gift-cards"
             className="group flex items-center gap-4 rounded-xl border border-[#1e1e1e] bg-[#111111] p-5 transition-all duration-200 hover:border-[#6366f1]/50"
           >
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#6366f1]/20 text-2xl">
-              💳
+              🎁
             </span>
             <div className="min-w-0 flex-1">
               <p className="font-medium text-white group-hover:text-[#6366f1]">
-                Recharger mon wallet
+                Cartes cadeaux
               </p>
               <p className="text-sm text-gray-500">
-                Ajouter des TND à votre solde
+                Google Play, PlayStation
               </p>
             </div>
             <ArrowRight className="h-5 w-5 shrink-0 text-gray-500 group-hover:text-[#6366f1]" />
@@ -180,7 +178,7 @@ export default function DashboardPage() {
                 Mes commandes
               </p>
               <p className="text-sm text-gray-500">
-                Voir l&apos;historique de vos achats
+                Historique de vos achats
               </p>
             </div>
             <ArrowRight className="h-5 w-5 shrink-0 text-gray-500 group-hover:text-[#6366f1]" />
@@ -188,7 +186,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Recent orders */}
       <div>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">
@@ -206,8 +203,8 @@ export default function DashboardPage() {
           <EmptyState
             icon="📦"
             title="Aucune commande pour le moment"
-            description="Découvrez nos services et commandez votre premier abonnement."
-            action={{ label: 'Découvrir les services', href: '/services' }}
+            description="Découvrez nos offres et top-up vos jeux préférés."
+            action={{ label: 'Découvrir les produits', href: '/products' }}
           />
         ) : (
           <div className="overflow-hidden rounded-xl border border-[#1e1e1e] bg-[#111111]">
@@ -216,10 +213,10 @@ export default function DashboardPage() {
                 <thead>
                   <tr className="border-b border-[#1e1e1e]">
                     <th className="px-4 py-3 font-medium text-gray-400">
-                      Service
+                      Produit
                     </th>
                     <th className="px-4 py-3 font-medium text-gray-400">
-                      Email activé
+                      Détails
                     </th>
                     <th className="px-4 py-3 font-medium text-gray-400">
                       Montant
@@ -240,14 +237,14 @@ export default function DashboardPage() {
                     >
                       <td className="px-4 py-3">
                         <span className="font-medium text-white">
-                          {order.service?.name ?? '—'}
+                          {order.product?.name ?? '—'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-400">
-                        {order.serviceEmail ?? '—'}
+                        {order.playerId ?? order.deliveredCode ?? '—'}
                       </td>
                       <td className="px-4 py-3 text-white">
-                        {formatTND(order.amountPaid)}
+                        {formatTND(order.amountPaid)} TND
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={order.status} />

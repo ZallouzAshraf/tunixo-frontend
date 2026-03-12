@@ -16,7 +16,7 @@ const registerSchema = z
     email: z.string().email("Email invalide"),
     password: z.string().min(6, "Min 6 caractères"),
     confirmPassword: z.string(),
-    role: z.enum(["BUYER", "SELLER"]),
+    role: z.literal("BUYER"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas",
@@ -24,26 +24,6 @@ const registerSchema = z
   });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
-
-const ROLE_OPTIONS: {
-  value: "BUYER" | "SELLER";
-  icon: string;
-  title: string;
-  description: string;
-}[] = [
-  {
-    value: "BUYER",
-    icon: "🛒",
-    title: "Je veux des abonnements",
-    description: "Accède aux services digitaux en payant en TND",
-  },
-  {
-    value: "SELLER",
-    icon: "💰",
-    title: "Je suis freelance",
-    description: "Utilise tes revenus digitaux et reçois des TND",
-  },
-];
 
 export default function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -53,15 +33,11 @@ export default function RegisterForm() {
   const {
     register,
     handleSubmit,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: { role: "BUYER" },
   });
-
-  const selectedRole = watch("role");
 
   const onSubmit = (data: RegisterFormData) => {
     doRegister({
@@ -85,35 +61,10 @@ export default function RegisterForm() {
         />
       </div>
       <h1 className="text-2xl font-bold text-white">Créer un compte</h1>
-      <p className="mt-1 text-gray-400 text-sm">Rejoins la communauté Tunixo</p>
-
-      <div className="mt-8">
-        <p className="mb-3 text-sm font-medium text-gray-300">Tu es...</p>
-        <div className="grid grid-cols-2 gap-3">
-          {ROLE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setValue("role", opt.value)}
-              className={cn(
-                "rounded-lg border-2 p-4 text-left transition-all duration-200",
-                selectedRole === opt.value
-                  ? "border-[#6366f1] bg-[#6366f1]/10"
-                  : "border-[#222222] bg-[#0a0a0a] hover:border-[#333]",
-              )}
-            >
-              <span className="text-2xl">{opt.icon}</span>
-              <p className="mt-2 text-sm font-semibold text-white">
-                {opt.title}
-              </p>
-              <p className="mt-0.5 text-xs text-gray-500">{opt.description}</p>
-            </button>
-          ))}
-        </div>
-        <input type="hidden" {...register("role")} />
-      </div>
+      <p className="mt-1 text-gray-400 text-sm">Rejoins Tunixo — top-up jeux et cartes cadeaux en TND</p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+        <input type="hidden" {...register("role")} />
         <div>
           <label
             htmlFor="fullName"

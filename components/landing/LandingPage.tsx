@@ -17,13 +17,11 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-const SERVICES = [
-  { name: "Cursor Pro", category: "AI Code Editor", price: 75 },
-  { name: "ChatGPT Plus", category: "AI Assistant", price: 95 },
-  { name: "Midjourney", category: "AI Image Generator", price: 85 },
-  { name: "Adobe Creative", category: "Design Suite", price: 120 },
-  { name: "Notion Pro", category: "Productivity", price: 45 },
-  { name: "Figma Pro", category: "UI Design", price: 65 },
+const CATEGORIES_PREVIEW = [
+  { name: "Free Fire", category: "Diamants", emoji: "🔥", href: "/products?category=free-fire" },
+  { name: "PUBG Mobile", category: "UC", emoji: "🔫", href: "/products?category=pubg" },
+  { name: "Google Play", category: "Cartes cadeaux", emoji: "🎁", href: "/products?category=google-play" },
+  { name: "PlayStation", category: "PSN", emoji: "🎮", href: "/products?category=playstation" },
 ] as const;
 
 const FAQ_ITEMS = [
@@ -33,19 +31,19 @@ const FAQ_ITEMS = [
   },
   {
     q: "Combien de temps prend la livraison ?",
-    a: "La plupart des services sont livrés automatiquement en moins d'une heure. Dans certains cas, notre équipe traite la commande manuellement sous 24h.",
+    a: "Cartes cadeaux : instantané. Top-up jeux : généralement en quelques minutes.",
   },
   {
     q: "Est-ce que c'est légal en Tunisie ?",
     a: "Oui. Tunixo est une marketplace de services numériques enregistrée en Tunisie (SUARL). Notre modèle met en relation des utilisateurs au sein d'une communauté d'entraide digitale. Toutes les transactions entre utilisateurs sont effectuées en dinars tunisiens (TND), conformément aux réglementations de la BCT.",
   },
   {
-    q: "Comment fonctionne la mise en relation ?",
-    a: "Les membres de notre communauté qui ont des revenus sur des plateformes digitales peuvent choisir de financer des abonnements pour d'autres utilisateurs. En échange, ils reçoivent des crédits TND dans leur wallet Tunixo, retirables via D17 ou virement bancaire sous 24h.",
+    q: "Combien de temps pour recevoir mon top-up ?",
+    a: "Les cartes cadeaux (Google Play, PlayStation) sont livrées instantanément. Les top-up jeux (Free Fire, PUBG) sont traités en quelques minutes. En cas d'échec, ton wallet est remboursé automatiquement.",
   },
   {
-    q: "Que se passe-t-il si mon abonnement ne fonctionne pas ?",
-    a: "Notre équipe support intervient immédiatement pour résoudre le problème ou te rembourser intégralement.",
+    q: "Que se passe-t-il si mon top-up échoue ?",
+    a: "Ton wallet est remboursé automatiquement. Tu peux réessayer ou contacter le support.",
   },
 ] as const;
 
@@ -120,18 +118,12 @@ export default function LandingPage() {
           </span>
           <h1 className="max-w-4xl text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
             <span className="text-white">
-              Accède aux services digitaux mondiaux
+              Top-up tes jeux en TND
             </span>
-            <br />
-            <span className="text-white">en payant localement en </span>
-            <span className="bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] bg-clip-text text-transparent">
-              TND
-            </span>
+            <span className="bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] bg-clip-text text-transparent"> 🎮</span>
           </h1>
           <p className="mt-6 max-w-xl text-base text-gray-400 sm:text-lg">
-            Cursor, ChatGPT, Midjourney, Adobe — tous tes outils favoris
-            accessibles depuis la Tunisie. Paie en dinars, sans carte
-            internationale.
+            Free Fire, PUBG, Google Play et PlayStation — rechargez en dinars tunisiens. Paiement local via Konnect.
           </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
             <Link
@@ -141,10 +133,10 @@ export default function LandingPage() {
               Commencer maintenant <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/services"
+              href="/products"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-6 py-3.5 text-base font-semibold text-white transition-all duration-300 hover:bg-white/10"
             >
-              Voir les services
+              Voir les offres
             </Link>
           </div>
           <div className="mt-16 grid grid-cols-3 gap-8 sm:gap-12">
@@ -158,18 +150,18 @@ export default function LandingPage() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-white sm:text-3xl">
-                20+
+                4
               </div>
               <div className="mt-1 text-sm text-gray-500">
-                Services disponibles
+                Catégories
               </div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-white sm:text-3xl">
-                24h
+                Instantané
               </div>
               <div className="mt-1 text-sm text-gray-500">
-                Délai de traitement max
+                Livraison
               </div>
             </div>
           </div>
@@ -195,14 +187,14 @@ export default function LandingPage() {
               {
                 step: 2,
                 Icon: ShoppingCart,
-                title: "Choisis ton service",
-                desc: "Parcours notre catalogue et sélectionne l'abonnement dont tu as besoin",
+                title: "Choisis ton produit",
+                desc: "Free Fire, PUBG, Google Play ou PlayStation — sélectionne ton top-up ou carte cadeau",
               },
               {
                 step: 3,
                 Icon: Zap,
-                title: "Reçois ton accès instantanément",
-                desc: "Tes identifiants sont livrés automatiquement en quelques minutes",
+                title: "Reçois en quelques secondes",
+                desc: "Top-up crédité ou code cadeau livré instantanément",
               },
             ].map(({ step, Icon, title, desc }) => (
               <div
@@ -226,56 +218,35 @@ export default function LandingPage() {
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-center text-3xl font-bold text-white sm:text-4xl">
-            Services disponibles
+            Top-up & Cartes cadeaux
           </h2>
           <p className="mx-auto mt-3 max-w-md text-center text-gray-400">
-            Et bien plus encore...
+            Free Fire, PUBG, Google Play, PlayStation
           </p>
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {SERVICES.map((s) => (
-              <div
-                key={s.name}
-                className="group rounded-lg border border-white/10 bg-[#111111] p-6 transition-all duration-300 hover:scale-[1.02] hover:border-[#6366f1]/50"
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {CATEGORIES_PREVIEW.map((c) => (
+              <Link
+                key={c.name}
+                href={c.href}
+                className="group rounded-lg border border-white/10 bg-[#111111] p-6 text-center transition-all duration-300 hover:scale-[1.02] hover:border-[#6366f1]/50"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className="inline-block rounded border border-white/10 px-2 py-0.5 text-xs text-gray-400">
-                      {s.category}
-                    </span>
-                    <h3 className="mt-2 text-lg font-semibold text-white">
-                      {s.name}
-                    </h3>
-                  </div>
-                  <span className="rounded bg-white/5 px-2 py-0.5 text-xs text-gray-500">
-                    Livraison &lt; 1h
-                  </span>
-                </div>
-                <p className="mt-3 text-sm text-gray-500">
-                  Abonnement mensuel — accès immédiat après paiement.
-                </p>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xl font-bold text-[#6366f1]">
-                    {s.price} TND{" "}
-                    <span className="text-sm font-normal text-gray-500">
-                      /mois
-                    </span>
-                  </span>
-                  <Link
-                    href="/services"
-                    className="rounded-lg border border-[#6366f1]/50 bg-[#6366f1]/10 px-4 py-2 text-sm font-medium text-[#6366f1] transition-colors hover:bg-[#6366f1]/20"
-                  >
-                    Commander
-                  </Link>
-                </div>
-              </div>
+                <span className="text-4xl">{c.emoji}</span>
+                <h3 className="mt-2 text-lg font-semibold text-white">
+                  {c.name}
+                </h3>
+                <p className="mt-1 text-sm text-gray-500">{c.category}</p>
+                <span className="mt-3 inline-block text-sm font-medium text-[#6366f1] group-hover:underline">
+                  Voir les offres →
+                </span>
+              </Link>
             ))}
           </div>
           <div className="mt-12 text-center">
             <Link
-              href="/services"
+              href="/products"
               className="inline-flex items-center gap-2 text-sm font-medium text-[#6366f1] transition-colors hover:text-[#818cf8]"
             >
-              Voir tous les services <ExternalLink className="h-4 w-4" />
+              Voir tous les produits <ExternalLink className="h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -286,22 +257,21 @@ export default function LandingPage() {
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             <div>
               <span className="inline-block rounded-full border border-[#6366f1]/50 bg-[#6366f1]/5 px-3 py-1 text-xs font-medium text-gray-300">
-                💡 Rejoins notre communauté
+                💡 Simple et rapide
               </span>
               <h2 className="mt-4 text-3xl font-bold text-white sm:text-4xl">
-                Tu es freelance ou créateur ?
+                Recharge en TND, reçois en secondes
               </h2>
               <p className="mt-4 text-gray-400">
-                Tu as des revenus sur des plateformes digitales ? Rejoins la
-                communauté Tunixo et aide d&apos;autres utilisateurs à accéder
-                aux outils dont ils ont besoin. En échange, reçois des crédits
-                TND utilisables ou retirables localement.
+                Plus besoin de carte internationale. Recharge ton wallet en dinars
+                via Konnect, puis commande ton top-up Free Fire, PUBG ou ta carte
+                Google Play / PlayStation. Livraison automatique.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
-                  "Aide la communauté tunisienne",
-                  "Reçois des crédits TND en retour",
-                  "Retrait via D17 ou virement bancaire",
+                  "Paiement 100% en TND",
+                  "Livraison instantanée",
+                  "Support réactif",
                 ].map((item) => (
                   <li
                     key={item}
@@ -316,7 +286,7 @@ export default function LandingPage() {
                 href="/register"
                 className="mt-8 inline-flex items-center gap-2 rounded-lg border-2 border-[#6366f1] bg-transparent px-5 py-2.5 text-sm font-semibold text-[#6366f1] transition-all duration-300 hover:bg-[#6366f1]/10"
               >
-                Rejoindre la communauté <ArrowRight className="h-4 w-4" />
+                Créer un compte <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
             <div className="relative flex justify-center">
@@ -325,18 +295,17 @@ export default function LandingPage() {
                 style={{ animation: "float 6s ease-in-out infinite" }}
               >
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Sparkles className="h-4 w-4 text-[#6366f1]" /> Service
-                  financé ✅
+                  <Sparkles className="h-4 w-4 text-[#6366f1]" /> Top-up livré ✅
                 </div>
                 <div className="mt-4 text-lg font-semibold text-white">
-                  Abonnement Cursor Pro
+                  Free Fire 310 Diamonds
                 </div>
                 <p className="mt-1 text-sm text-gray-400">
-                  Financé via communauté Tunixo
+                  ​14 TND — Livré en &lt; 1 min
                 </p>
                 <div className="mt-4 border-t border-white/10 pt-4">
                   <span className="text-xl font-bold text-[#6366f1]">
-                    Crédits TND: +142.5 TND
+                    Player ID crédité
                   </span>
                 </div>
               </div>
@@ -353,27 +322,22 @@ export default function LandingPage() {
           <p className="mx-auto mt-3 max-w-md text-center text-gray-400">
             La solution pensée pour les Tunisiens
           </p>
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              {
-                icon: Lock,
-                title: "100% Sécurisé",
-                desc: "Transactions protégées et données chiffrées",
-              },
               {
                 icon: Zap,
                 title: "Livraison instantanée",
-                desc: "Accès livrés automatiquement dès confirmation du paiement",
+                desc: "Top-up crédité en quelques secondes",
+              },
+              {
+                icon: Lock,
+                title: "100% Sécurisé",
+                desc: "Paiement local en TND via Konnect",
               },
               {
                 icon: CreditCard,
-                title: "Paiement local",
-                desc: "D17, virement, carte bancaire locale — aucune carte internationale",
-              },
-              {
-                icon: Headphones,
-                title: "Support réactif",
-                desc: "Notre équipe répond dans les 2 heures",
+                title: "Tous vos jeux",
+                desc: "Free Fire, PUBG, Google Play, PlayStation",
               },
             ].map((item) => (
               <div
@@ -448,10 +412,10 @@ export default function LandingPage() {
               Créer mon compte
             </Link>
             <Link
-              href="/services"
+              href="/products"
               className="inline-flex items-center justify-center rounded-lg border border-white/30 bg-white/10 px-6 py-3.5 text-base font-semibold text-white backdrop-blur-sm transition-all duration-300 hover:bg-white/20"
             >
-              Voir les services
+              Voir les offres
             </Link>
           </div>
         </div>
@@ -477,37 +441,31 @@ export default function LandingPage() {
             <div>
               <h4 className="text-sm font-semibold text-white">Plateforme</h4>
               <ul className="mt-4 space-y-2">
-                {["Services", "Comment ça marche", "Tarifs", "FAQ"].map(
-                  (label) => (
-                    <li key={label}>
-                      <Link
-                        href={
-                          label === "Services"
-                            ? "/services"
-                            : label === "FAQ"
-                              ? "#faq"
-                              : "/"
-                        }
-                        className="text-sm text-gray-500 transition-colors hover:text-gray-300"
-                      >
-                        {label}
-                      </Link>
-                    </li>
-                  ),
-                )}
+                {["Produits", "Comment ça marche", "FAQ"].map((label) => (
+                  <li key={label}>
+                    <Link
+                      href={
+                        label === "Produits"
+                          ? "/products"
+                          : label === "FAQ"
+                            ? "#faq"
+                            : "/"
+                      }
+                      className="text-sm text-gray-500 transition-colors hover:text-gray-300"
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-white">Communauté</h4>
+              <h4 className="text-sm font-semibold text-white">Compte</h4>
               <ul className="mt-4 space-y-2">
-                {[
-                  "Rejoindre la communauté",
-                  "Financer des abonnements",
-                  "Retirer des TND",
-                ].map((label) => (
+                {["Créer un compte", "Se connecter"].map((label) => (
                   <li key={label}>
                     <Link
-                      href="/register"
+                      href={label === "Créer un compte" ? "/register" : "/login"}
                       className="text-sm text-gray-500 transition-colors hover:text-gray-300"
                     >
                       {label}

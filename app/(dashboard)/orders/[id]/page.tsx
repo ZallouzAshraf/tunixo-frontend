@@ -1,17 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { differenceInDays } from 'date-fns'
-import { useOrder, useCancelOrder } from '@/hooks/useOrders'
-import { formatTND, formatDate, formatDateTime } from '@/lib/utils'
+import { useOrder } from '@/hooks/useOrders'
+import { formatTND, formatDateTime } from '@/lib/utils'
 import OrderStatus from '@/components/orders/OrderStatus'
 import StatusBadge from '@/components/common/StatusBadge'
-import ConfirmDialog from '@/components/common/ConfirmDialog'
 import LoadingSpinner from '@/components/common/LoadingSpinner'
 import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
+import type { OrderStatus as OrderStatusType } from '@/types'
 
 function getGradientFromName(name: string): string {
   const hues = [250, 270, 300, 330, 200]
@@ -21,12 +19,8 @@ function getGradientFromName(name: string): string {
 }
 
 function CopyButton({ value, label }: { value: string; label: string }) {
-  const [copied, setCopied] = useState(false)
   const copy = () => {
     navigator.clipboard.writeText(value)
-    setCopied(true)
-    toast.success('Copié')
-    setTimeout(() => setCopied(false), 2000)
   }
   return (
     <button
@@ -34,7 +28,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
       onClick={copy}
       className="rounded border border-[#1e1e1e] bg-[#111111] px-2 py-1 text-xs text-gray-400 hover:text-white"
     >
-      {copied ? 'Copié !' : label}
+      {label}
     </button>
   )
 }
@@ -44,8 +38,6 @@ export default function OrderDetailPage() {
   const router = useRouter()
   const id = params?.id as string
   const { data: order, isLoading, isError } = useOrder(id)
-  const cancelOrder = useCancelOrder()
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -53,20 +45,6 @@ export default function OrderDetailPage() {
       router.replace('/orders')
     }
   }, [id, isError, isLoading, order, router])
-
-  const handleCancelConfirm = () => {
-    if (!order) return
-    cancelOrder.mutate(order.id, {
-      onSuccess: () => {
-        toast.success(
-          `Commande annulée — ${formatTND(order.amountPaid)} remboursé`
-        )
-        setCancelDialogOpen(false)
-        router.replace('/orders')
-      },
-      onError: () => toast.error('Impossible d\'annuler la commande'),
-    })
-  }
 
   if (!id || isLoading || isError) {
     return (
@@ -78,16 +56,18 @@ export default function OrderDetailPage() {
 
   if (!order) return null
 
-  const serviceName = order.service?.name ?? 'Service'
-  const serviceSlug = order.service?.slug ?? ''
-  const serviceCategory = order.service?.category
-  const serviceDescription = order.service?.description
-  const gradient = getGradientFromName(serviceName)
-  const initial = serviceName.charAt(0).toUpperCase()
+  const productName = order.product?.name ?? 'Produit'
+  const productCategory = order.product?.category
+  const productDescription = order.product?.description
+  const gradient = getGradientFromName(productName)
+  const initial = productName.charAt(0).toUpperCase()
   const shortId = order.id.length > 8 ? order.id.slice(-8) : order.id
-  const expiresAt = order.expiresAt ? new Date(order.expiresAt) : null
-  const expiresSoon =
-    expiresAt && differenceInDays(expiresAt, new Date()) < 5
+  const detailsDisplay =
+    order.status === 'COMPLETED' && order.deliveredCode
+      ? order.deliveredCode
+      : order.product?.serviceType === 'TOPUP'
+        ? (order.playerUsername || order.playerId || '—')
+        : '—'
 
   return (
     <div className="space-y-8">
@@ -101,9 +81,9 @@ export default function OrderDetailPage() {
 
       <OrderStatus
         status={order.status}
-        serviceEmail={order.serviceEmail}
-        serviceName={serviceName}
-        serviceSlug={serviceSlug}
+        productName={productName}
+        productCategory={productCategory}
+        failureReason={order.failureReason}
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -120,22 +100,22 @@ export default function OrderDetailPage() {
               </dd>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <dt className="w-32 shrink-0 text-gray-500">Service</dt>
-              <dd className="text-white">{serviceName}</dd>
+              <dt className="w-32 shrink-0 text-gray-500">Produit</dt>
+              <dd className="text-white">{productName}</dd>
             </div>
-            {order.serviceEmail && (
-              <div className="flex flex-wrap items-center gap-2">
-                <dt className="w-32 shrink-0 text-gray-500">Email activé</dt>
-                <dd className="flex items-center gap-2 text-white">
-                  {order.serviceEmail}
-                  <CopyButton value={order.serviceEmail} label="Copier" />
-                </dd>
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <dt className="w-32 shrink-0 text-gray-500">Détails</dt>
+              <dd className="flex flex-wrap items-center gap-2 text-white">
+                {detailsDisplay}
+                {order.status === 'COMPLETED' && order.deliveredCode && (
+                  <CopyButton value={order.deliveredCode} label="Copier" />
+                )}
+              </dd>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <dt className="w-32 shrink-0 text-gray-500">Statut</dt>
               <dd>
-                <StatusBadge status={order.status} />
+                <StatusBadge status={order.status as OrderStatusType} />
               </dd>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -148,20 +128,6 @@ export default function OrderDetailPage() {
                 {formatDateTime(order.createdAt)}
               </dd>
             </div>
-            {order.expiresAt && (
-              <div className="flex flex-wrap items-center gap-2">
-                <dt className="w-32 shrink-0 text-gray-500">
-                  Date d&apos;expiration
-                </dt>
-                <dd
-                  className={
-                    expiresSoon ? 'text-red-400' : 'text-white'
-                  }
-                >
-                  {formatDate(order.expiresAt)}
-                </dd>
-              </div>
-            )}
           </dl>
         </div>
 
@@ -174,40 +140,27 @@ export default function OrderDetailPage() {
               {initial}
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white">{serviceName}</h3>
-              {serviceCategory && (
+              <h3 className="text-xl font-bold text-white">{productName}</h3>
+              {productCategory && (
                 <span className="rounded bg-[#1e1e1e] px-2 py-0.5 text-xs text-gray-400">
-                  {serviceCategory}
+                  {productCategory}
                 </span>
               )}
             </div>
           </div>
-          {serviceDescription && (
-            <p className="mt-4 text-sm text-gray-400">{serviceDescription}</p>
+          {productDescription && (
+            <p className="mt-4 text-sm text-gray-400">{productDescription}</p>
           )}
 
-          {order.status === 'ACTIVE' && order.serviceEmail && (
-            <div className="mt-6">
-              <h4 className="font-medium text-white">
-                Comment accéder à votre service
-              </h4>
-              <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-gray-400">
-                <li>Allez sur le site de {serviceName}</li>
-                <li>Connectez-vous avec {order.serviceEmail}</li>
-                <li>Profitez de votre abonnement !</li>
-              </ol>
-            </div>
-          )}
-
-          {order.status === 'PENDING' && (
+          {(order.status === 'PENDING' || order.status === 'PROCESSING') && (
             <div className="mt-6">
               <h4 className="font-medium text-white">
                 Que se passe-t-il maintenant ?
               </h4>
               <ol className="mt-2 list-inside list-decimal space-y-1 text-sm text-gray-400">
                 <li>Votre paiement a été confirmé ✅</li>
-                <li>Notre équipe active votre abonnement ⏳</li>
-                <li>Vous recevrez un email de confirmation</li>
+                <li>Le top-up est en cours de traitement ⏳</li>
+                <li>Vous recevrez le code ou le crédit sous peu</li>
               </ol>
             </div>
           )}
@@ -215,31 +168,20 @@ export default function OrderDetailPage() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        {order.status === 'PENDING' && (
-          <Button
-            variant="destructive"
-            onClick={() => setCancelDialogOpen(true)}
-            disabled={cancelOrder.isPending}
-          >
-            Annuler la commande
-          </Button>
-        )}
-        {order.status === 'ACTIVE' && expiresSoon && serviceSlug && (
+        {productCategory && (
           <Link
-            href={`/services/${serviceSlug}`}
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-[#6366f1] px-4 text-sm font-medium text-white hover:bg-[#5558e3]"
-          >
-            Renouveler maintenant
-          </Link>
-        )}
-        {order.status === 'EXPIRED' && serviceSlug && (
-          <Link
-            href={`/services/${serviceSlug}`}
+            href={`/products?category=${productCategory}`}
             className="inline-flex h-9 items-center justify-center rounded-lg bg-[#6366f1] px-4 text-sm font-medium text-white hover:bg-[#5558e3]"
           >
             Commander à nouveau
           </Link>
         )}
+        <Link
+          href="/orders"
+          className="inline-flex h-9 items-center justify-center rounded-lg border border-[#1e1e1e] px-4 text-sm font-medium text-gray-300 hover:bg-white/5"
+        >
+          Retour aux commandes
+        </Link>
       </div>
 
       <div className="rounded-xl border border-[#1e1e1e] bg-[#111111] p-6">
@@ -247,8 +189,7 @@ export default function OrderDetailPage() {
           Besoin d&apos;aide avec cette commande ?
         </h4>
         <p className="mt-2 text-sm text-gray-400">
-          Si votre abonnement n&apos;est pas activé après 2 heures, contactez
-          notre support.
+          En cas de problème ou de retard, contactez notre support.
         </p>
         <p className="mt-2 text-sm text-gray-400">
           Email:{' '}
@@ -260,16 +201,6 @@ export default function OrderDetailPage() {
           </a>
         </p>
       </div>
-
-      <ConfirmDialog
-        isOpen={cancelDialogOpen}
-        onClose={() => setCancelDialogOpen(false)}
-        onConfirm={handleCancelConfirm}
-        title="Annuler la commande"
-        description="Êtes-vous sûr de vouloir annuler cette commande ? Le montant vous sera remboursé sur votre wallet."
-        confirmText="Annuler la commande"
-        isLoading={cancelOrder.isPending}
-      />
     </div>
   )
 }

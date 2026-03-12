@@ -3,63 +3,58 @@ export interface User {
   email: string
   fullName?: string
   phone?: string
-  role: 'BUYER' | 'SELLER' | 'ADMIN'
+  role: 'BUYER' | 'ADMIN'
   walletBalance: number
   isVerified: boolean
   createdAt: string
-  updatedAt: string
+  updatedAt?: string
 }
 
-export interface Service {
+export type ServiceType = 'TOPUP' | 'GIFTCARD'
+export type ProductStatus = 'ACTIVE' | 'INACTIVE'
+
+export interface Product {
   id: string
   name: string
   slug: string
   description?: string
-  priceTnd: number
-  priceUsd: number
-  category?: string
   imageUrl?: string
-  isActive: boolean
-  stockCount?: number
-  deliveryType?: 'ACCOUNT' | 'MANUAL'
+  category: string
+  serviceType: ServiceType
+  gameId?: string
+  productId?: string
+  priceTnd: number
+  costUsd: number
+  status: ProductStatus
+  sortOrder: number
   createdAt: string
+  updatedAt: string
+  _count?: { codes: number }
 }
 
-export interface StockLevelItem {
-  serviceId: string
-  service?: Service
-  available: number
-  used: number
-  total: number
-  accounts?: Account[]
-}
-
-export interface Account {
-  id: string
-  serviceId: string
-  service?: Service
-  accountEmail?: string
-  credentials: Record<string, unknown>
-  status: 'AVAILABLE' | 'RESERVED' | 'USED'
-  expiresAt?: string
-  createdAt: string
-}
+export type OrderStatus =
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'REFUNDED'
 
 export interface Order {
   id: string
   userId: string
   user?: User
-  serviceId: string
-  service?: Service
-  serviceEmail?: string
-  accountId?: string
-  account?: Account
+  productId: string
+  product?: Product
+  playerId?: string
+  zoneId?: string
+  playerUsername?: string
+  deliveredCode?: string
   amountPaid: number
   platformFee: number
-  status: 'PENDING' | 'ACTIVE' | 'FAILED' | 'EXPIRED' | 'REFUNDED'
+  status: OrderStatus
+  apiReference?: string
   paymentReference?: string
-  expiresAt?: string
-  renewalReminder: boolean
+  failureReason?: string
   createdAt: string
   updatedAt: string
 }
@@ -68,86 +63,23 @@ export interface Transaction {
   id: string
   userId: string
   amount: number
-  type: 'CREDIT' | 'DEBIT' | 'WITHDRAWAL' | 'COMMISSION'
+  type: 'CREDIT' | 'DEBIT'
   reference?: string
   description?: string
   balanceAfter: number
   createdAt: string
 }
 
-export interface SellerDeposit {
-  id: string
-  sellerId: string
-  seller?: User
-  amountUsd: number
-  amountTnd: number
-  exchangeRate: number
-  sellerCommission: number
-  proofUrl?: string
-  paymentMethod?: string
-  status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'USED'
-  confirmedBy?: string
-  confirmedAt?: string
-  rejectionReason?: string
-  createdAt: string
-}
-
-export interface SellerWithdrawal {
-  id: string
-  sellerId: string
-  seller?: User
-  amountTnd: number
-  method: string
-  methodDetails: Record<string, unknown>
-  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED'
-  processedBy?: string
-  processedAt?: string
-  rejectionReason?: string
-  createdAt: string
-}
-
 export interface DashboardStats {
-  users: {
-    total: number
-    buyers: number
-    sellers: number
-    newToday: number
-    newThisMonth: number
-  }
-  orders: {
-    total: number
-    active: number
-    pending: number
-    failed: number
-    totalRevenue: number
-    revenueToday: number
-    revenueThisMonth: number
-  }
-  deposits: {
-    total: number
-    pending: number
-    confirmed: number
-    totalUsd: number
-    totalTnd: number
-  }
-  withdrawals: {
-    total: number
-    pending: number
-    completed: number
-    totalTnd: number
-  }
-  wallet: {
-    totalBuyerBalance: number
-    totalSellerBalance: number
-  }
-  reserve: {
-    currentUsd: number
-  }
-  services: {
-    total: number
-    active: number
-    totalStock: number
-  }
+  totalUsers: number
+  totalOrders: number
+  pendingOrders: number
+  completedOrders: number
+  failedOrders: number
+  totalRevenueTnd: number
+  todayOrders: number
+  todayRevenue: number
+  stockAlerts: Array<{ productName: string; available: number; threshold: number }>
 }
 
 export interface PaginatedResponse<T> {
@@ -155,6 +87,7 @@ export interface PaginatedResponse<T> {
   total: number
   page: number
   limit: number
+  totalPages?: number
 }
 
 export interface ApiResponse<T> {
